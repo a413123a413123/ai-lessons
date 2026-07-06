@@ -1,0 +1,344 @@
+<style>
+  :root{
+    --bg:#070c18; --bg2:#0c1428; --bg3:#111c35; --panel:rgba(255,255,255,.03);
+    --cyan:#00d4ff; --cyan2:#00a8cc; --green:#00e676; --orange:#ff6b35; --gold:#ffd060; --purple:#9b6dff; --red:#ff3b30;
+    --text:#dce8f4; --ink:#f2f8ff; --dim:#7a8fa8;
+    --line:rgba(0,212,255,.18); --line2:rgba(255,255,255,.07);
+    --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    --wrap:800px;
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .page{font-family:var(--sans); color:var(--text); font-size:17px; line-height:1.85; -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1200px 600px at 72% -6%,rgba(0,212,255,.10),transparent 60%),
+      linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px) 0 0/100% 42px,
+      linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px) 0 0/42px 100%,
+      var(--bg);}
+  .wrap{max-width:var(--wrap); margin:0 auto; padding:0 22px}
+  h1,h2,h3{color:var(--ink); line-height:1.32; text-wrap:balance; margin:0}
+  .prog{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--cyan),var(--green)); width:0%; z-index:50; box-shadow:0 0 10px var(--cyan)}
+
+  .hero{padding:76px 0 54px; border-bottom:1px solid var(--line2)}
+  .hero .wrap{max-width:860px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.28em; text-transform:uppercase; color:var(--cyan); margin-bottom:20px}
+  .hero h1{font-size:42px; font-weight:800; letter-spacing:-.01em; color:#fff; text-shadow:0 0 26px rgba(0,212,255,.28)}
+  .hero .sub{color:#9fb2c6; font-size:17px; margin:18px 0 0; max-width:56ch; font-family:var(--mono); line-height:1.7}
+  .toc{display:flex; gap:0; flex-wrap:wrap; margin-top:30px; border:1px solid var(--line2); border-radius:12px; overflow:hidden}
+  .toc a{flex:1; min-width:150px; padding:14px 16px; color:var(--text); text-decoration:none; border-right:1px solid var(--line2); transition:.15s; font-size:14.5px}
+  .toc a:last-child{border-right:none}
+  .toc a:hover{background:rgba(0,212,255,.06); color:#fff}
+  .toc a .n{font-family:var(--mono); font-size:11px; color:var(--cyan); display:block; margin-bottom:3px}
+
+  section{padding:56px 0; border-bottom:1px solid var(--line2)}
+  .snum{font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:.08em}
+  h2{font-size:28px; font-weight:800; margin:8px 0 8px; color:#fff}
+  .lead{font-size:17px; color:#aebfd0; margin:6px 0 22px; max-width:62ch}
+  p{margin:15px 0; max-width:64ch}
+  strong{color:#fff; font-weight:700}
+  .hl{color:var(--gold); font-weight:700}
+  .en{font-family:var(--mono); color:var(--dim); font-size:.82em; letter-spacing:.02em}
+
+  /* domain grid */
+  .domains{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:8px 0 18px}
+  .dom{background:var(--panel); border:1px solid var(--line2); border-radius:14px; padding:20px 18px; cursor:pointer; transition:.18s}
+  .dom:hover{border-color:var(--line); transform:translateY(-2px)}
+  .dom.open{border-color:var(--cyan); box-shadow:0 0 26px rgba(0,212,255,.10)}
+  .dom svg{display:block; margin-bottom:12px}
+  .dom h3{font-size:18px; color:#fff; margin:0}
+  .dom .en{display:block; margin-top:3px}
+  .dom .ex{font-size:14.5px; color:#a9bccf; line-height:1.75; max-height:0; overflow:hidden; opacity:0; transition:.28s}
+  .dom.open .ex{max-height:220px; opacity:1; margin-top:13px; padding-top:13px; border-top:1px solid var(--line2)}
+  .axis{display:flex; align-items:center; gap:14px; font-size:14px; color:var(--dim); font-family:var(--mono); margin-top:8px}
+  .axis b{color:var(--text); font-weight:600} .axis .ln{flex:1; height:1px; background:linear-gradient(90deg,var(--cyan),var(--purple))}
+
+  /* training interactive */
+  .lab{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:20px; margin:20px 0}
+  .lab .top{display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px}
+  .lab .cap{font-size:14px; color:var(--dim)}
+  .metric{font-family:var(--mono); font-size:15px; color:var(--text)}
+  .metric b{color:var(--green); font-size:20px}
+  svg.stage{width:100%; height:auto; aspect-ratio:16/10; display:block; background:
+     linear-gradient(rgba(0,212,255,.05) 1px,transparent 1px) 0 0/100% 10%,
+     linear-gradient(90deg,rgba(0,212,255,.05) 1px,transparent 1px) 0 0/6.25% 100%,
+     #08101f; border-radius:12px; border:1px solid var(--line2)}
+  .ctrl{display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap}
+  .btn{font-family:var(--sans); font-size:14.5px; background:rgba(0,212,255,.10); color:var(--cyan); border:1px solid var(--line); padding:9px 18px; border-radius:9px; cursor:pointer; transition:.15s}
+  .btn:hover{background:rgba(0,212,255,.18)} .btn:disabled{opacity:.4; cursor:default}
+  .btn.ghost{background:transparent; color:var(--dim)}
+  .legend2{display:flex; gap:16px; font-size:13px; color:var(--text)} .legend2 i{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
+
+  /* representation */
+  .w2v{background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:22px; margin:18px 0}
+  .pick{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px}
+  .pick button{font-family:var(--sans); font-size:15px; background:rgba(255,255,255,.03); color:var(--text); border:1px solid var(--line2); padding:7px 14px; border-radius:9px; cursor:pointer}
+  .pick button:hover{border-color:var(--cyan)} .pick button.sel{background:rgba(0,212,255,.14); border-color:var(--cyan); color:var(--cyan); font-weight:700}
+  .flow{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .word{font-size:32px; font-weight:800; color:#fff; min-width:54px; text-align:center; text-shadow:0 0 18px rgba(0,212,255,.3)}
+  .arrow{color:var(--cyan); font-size:22px}
+  .vec{font-family:var(--mono); font-size:15px; color:var(--gold); background:rgba(0,0,0,.35); border:1px solid var(--line2); padding:12px 14px; border-radius:10px; flex:1; min-width:230px; overflow-x:auto; white-space:nowrap}
+  .note{font-size:14px; color:var(--dim); margin-top:14px}
+
+  .sim{background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:22px; margin:18px 0}
+  .sim .row{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .sim select{font-family:var(--sans); font-size:16px; background:#0a1424; color:#fff; border:1px solid var(--line); border-radius:9px; padding:9px 12px}
+  .sim .eq{color:var(--dim); font-size:20px}
+  .simbar{margin-top:18px; background:rgba(0,0,0,.3); border-radius:999px; height:16px; overflow:hidden; border:1px solid var(--line2)}
+  .simbar > div{height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--green)); transition:width .4s; border-radius:999px}
+  .simval{font-family:var(--mono); font-size:14px; color:var(--text); margin-top:10px}
+
+  .mapwrap{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:16px; margin:18px 0}
+  .maphead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin:2px 4px 12px}
+  .maphead .hint{font-family:var(--mono); font-size:12.5px; color:var(--dim)}
+  .legend{display:flex; gap:15px; flex-wrap:wrap; font-size:13px; color:var(--text)}
+  .legend span{display:inline-flex; align-items:center; gap:6px} .legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  svg.map{width:100%; height:auto; aspect-ratio:100/62; display:block; touch-action:manipulation; background:
+     radial-gradient(700px 400px at 50% 40%,rgba(0,212,255,.06),transparent 70%),
+     linear-gradient(rgba(0,212,255,.06) 1px,transparent 1px) 0 0/100% 34px,
+     linear-gradient(90deg,rgba(0,212,255,.06) 1px,transparent 1px) 0 0/34px 100%,
+     #08101f; border-radius:12px; border:1px solid var(--line2)}
+  .node circle{cursor:pointer; transition:r .15s}
+  .node text{font-family:var(--sans); font-size:2.7px; font-weight:700; fill:var(--text); cursor:pointer; paint-order:stroke; stroke:#08101f; stroke-width:0.9px}
+  .readout{font-size:15px; color:var(--text); margin:14px 4px 2px; min-height:24px} .readout b{color:var(--gold)}
+
+  .recap{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:26px; margin:20px 0}
+  .recap ul{margin:0; padding-left:0; list-style:none; display:grid; gap:11px}
+  .recap li{display:flex; gap:12px; font-size:16px; color:var(--text)} .recap li .k{color:var(--cyan); font-weight:800; font-family:var(--mono)}
+  .next{display:flex; align-items:center; gap:14px; background:linear-gradient(100deg,rgba(0,212,255,.10),rgba(155,109,255,.10)); border:1px solid var(--line); border-radius:16px; padding:20px 24px; margin-top:18px; flex-wrap:wrap}
+  .next .lb{font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--cyan)}
+  .next h3{color:#fff; font-size:20px; margin:3px 0 0} .next .a2{font-family:var(--mono); color:var(--dim); font-size:13px}
+  .foot{color:var(--dim); font-size:13px; text-align:center; padding:32px 0 52px; font-family:var(--mono)}
+  @media(max-width:520px){ .hero h1{font-size:31px} h2{font-size:23px} .page{font-size:16px} }
+</style>
+
+<div class="prog" id="prog"></div>
+<div class="page">
+
+  <header class="hero"><div class="wrap">
+    <div class="eyebrow">AI 教材 · 第一課</div>
+    <h1>AI 能做什麼？又是如何「理解」世界的？</h1>
+    <div class="sub">應用領域 · 機器如何從資料學習 · 讓 AI 理解語意的關鍵：向量表徵</div>
+    <nav class="toc">
+      <a href="#s1"><span class="n">01</span>應用領域</a>
+      <a href="#s2"><span class="n">02</span>機器如何學習</a>
+      <a href="#s3"><span class="n">03</span>向量表徵</a>
+      <a href="#s4"><span class="n">04</span>意義空間</a>
+    </nav>
+  </div></header>
+
+  <section id="s1"><div class="wrap">
+    <div class="snum">01</div>
+    <h2>當代 AI 的四大應用領域</h2>
+    <p class="lead">當前的人工智慧，主要落在以下四個領域。點擊任一領域展開實際案例。</p>
+    <div class="domains" id="domains">
+      <div class="dom" data-k="cv">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M4 20s6-10 16-10 16 10 16 10-6 10-16 10S4 20 4 20Z"/><circle cx="20" cy="20" r="5" fill="rgba(0,212,255,.15)"/></svg>
+        <h3>電腦視覺</h3><span class="en">Computer Vision</span>
+        <div class="ex">影像辨識、物件偵測、人臉辨識、醫學影像判讀、自駕車環境感知。<br>將「畫面」轉換為結構化的判斷。</div>
+      </div>
+      <div class="dom" data-k="sp">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"><path d="M4 20h4M10 12v16M16 6v28M22 10v20M28 15v10M34 18v4"/></svg>
+        <h3>語音處理</h3><span class="en">Speech Processing</span>
+        <div class="ex">語音辨識（把話變字幕）、語音合成（把字念成聲音）、語音助理指令理解。<br>在「聲音」與「文字」之間轉換。</div>
+      </div>
+      <div class="dom" data-k="nlp">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M6 8h28v18H16l-8 6V26H6Z"/><path d="M12 15h16M12 20h10" stroke-linecap="round"/></svg>
+        <h3>自然語言處理</h3><span class="en">NLP · 大型語言模型 LLM</span>
+        <div class="ex">對話、翻譯、摘要、寫作、程式輔助。ChatGPT 即屬此類。<br><b>第二、三課將深入這個領域。</b></div>
+      </div>
+      <div class="dom" data-k="gen">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5l3.5 9L33 17l-9.5 3L20 29l-3.5-9L7 17l9.5-3Z"/><path d="M32 28l1.5 4 4 1.5-4 1.5L32 39l-1.5-4-4-1.5 4-1.5Z"/></svg>
+        <h3>生成式 AI</h3><span class="en">Generative AI</span>
+        <div class="ex">由描述生成影像、文字、音樂、影片（如 Diffusion、GPT）。<br>創造出原本不存在的內容。</div>
+      </div>
+    </div>
+    <div class="axis"><b>理解 / 判別</b><span class="ln"></span><b>創造 / 生成</b></div>
+    <p style="margin-top:16px;color:var(--dim);font-size:14.5px">前三者著重「理解與判斷」現有資料；生成式 AI 則著重「產生」新內容。四者共用同一套底層原理——接下來的兩節，就是這套原理。</p>
+  </div></section>
+
+  <section id="s2"><div class="wrap">
+    <div class="snum">02</div>
+    <h2>機器如何「學習」</h2>
+    <p class="lead">AI 不是由人撰寫規則，而是從<strong>大量已標註的資料</strong>中，反覆調整、逐步逼近正確的判斷。
+    下方是一個可操作的示意：兩類資料點混在一起，模型要找出一條線把它們分開。</p>
+    <div class="lab">
+      <div class="top">
+        <div class="legend2"><span><i style="background:var(--cyan)"></i>類別 A</span><span><i style="background:var(--orange)"></i>類別 B</span></div>
+        <div class="metric">分類準確率 <b id="acc">50%</b></div>
+      </div>
+      <svg class="stage" id="stage" viewBox="0 0 160 100" preserveAspectRatio="none" role="img" aria-label="分類訓練示意"></svg>
+      <div class="ctrl">
+        <button class="btn" id="train">訓練一步 →</button>
+        <button class="btn ghost" id="reset">重置</button>
+        <span class="cap" id="tcap">初始的分隔線是隨機的，幾乎分不開。按「訓練一步」，模型會依錯誤修正。</span>
+      </div>
+    </div>
+    <p>每一步訓練，模型只做一件事：<strong>看哪些點被分錯，把線往正確的方向修一點</strong>。
+    反覆幾次，準確率就從隨機的五成，逼近百分之百。這就是「<span class="hl">從資料中學習</span>」的本質。</p>
+  </div></section>
+
+  <section id="s3"><div class="wrap">
+    <div class="snum">03</div>
+    <h2>核心：把萬物轉換成「向量」</h2>
+    <p class="lead">電腦只能處理數字。任何輸入——文字、影像、聲音——都必須先被轉換成一串數字，
+    稱為<strong>向量 <span class="en">vector</span></strong>。選一個詞，觀察它對應的向量：</p>
+    <div class="w2v" id="w2v">
+      <div class="pick" id="w2vpick"></div>
+      <div class="flow"><div class="word" id="w2vword">貓</div><div class="arrow">→</div><div class="vec" id="w2vvec"></div></div>
+      <div class="note" id="w2vnote"></div>
+    </div>
+    <p>關鍵在於：這串數字<strong>並非隨機</strong>。<span class="hl">語意越接近的詞，向量也越接近</span>。
+    這種「用數字承載語意」的表示法，稱為<strong>詞嵌入 <span class="en">embedding</span></strong>。
+    下方選兩個詞，量測它們的語意相似度：</p>
+    <div class="sim">
+      <div class="row">
+        <select id="wa"></select><span class="eq">vs</span><select id="wb"></select>
+      </div>
+      <div class="simbar"><div id="simfill"></div></div>
+      <div class="simval" id="simval"></div>
+    </div>
+  </div></section>
+
+  <section id="s4"><div class="wrap">
+    <div class="snum">04 · 互動</div>
+    <h2>意義空間：AI 眼中的世界</h2>
+    <p class="lead">把每個詞的向量畫成一個點，語意相近的自然聚在一起，形成一個<strong>意義空間</strong>。
+    點選任一個詞，觀察與它最相近的三個鄰居。</p>
+    <div class="mapwrap">
+      <div class="maphead">
+        <div class="legend">
+          <span><i style="background:var(--green)"></i>動物</span>
+          <span><i style="background:var(--cyan)"></i>交通工具</span>
+          <span><i style="background:var(--gold)"></i>水果</span>
+          <span><i style="background:var(--purple)"></i>情緒</span>
+        </div>
+        <div class="hint">點詞語看鄰居</div>
+      </div>
+      <svg class="map" id="map" viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet" role="img" aria-label="詞語意義空間"></svg>
+      <div class="readout" id="readout">點選任一個詞，觀察與它最接近的鄰居。</div>
+    </div>
+    <p>不同語意的詞自然分成幾群，群內彼此相近。而「一句話中，<strong>哪個字該關注哪個字</strong>」的判斷，
+    正是下一課的核心：<span class="hl">注意力機制 Attention</span>。</p>
+  </div></section>
+
+  <section style="border-bottom:none"><div class="wrap">
+    <div class="snum">回顧</div>
+    <h2>本課重點</h2>
+    <div class="recap"><ul>
+      <li><span class="k">01</span><span>AI 四大應用領域：<strong>電腦視覺、語音處理、自然語言處理、生成式 AI</strong>。</span></li>
+      <li><span class="k">02</span><span>機器學習 = 從大量資料中<strong>反覆調整、逼近正確答案</strong>，而非人工寫規則。</span></li>
+      <li><span class="k">03</span><span>任何輸入都先轉換成<strong>向量</strong>；語意相近，向量就相近（詞嵌入）。</span></li>
+      <li><span class="k">04</span><span>所有向量構成一個<strong>意義空間</strong>，這是 AI 理解世界的基礎。</span></li>
+    </ul>
+      <div class="next">
+        <div><div class="lb">下一課</div><h3>注意力機制與 Transformer</h3></div>
+        <div style="flex:1"></div><div class="a2">Attention is all you need →</div>
+      </div>
+    </div>
+    <div class="foot">2026 PLAYCHIP · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
+  </div></section>
+</div>
+
+<script>
+(function(){
+  var doc=document.documentElement;
+  var prog=document.getElementById('prog');
+  window.addEventListener('scroll',function(){ prog.style.width=(doc.scrollTop/((doc.scrollHeight-doc.clientHeight)||1)*100)+'%'; },{passive:true});
+  function col(v){return getComputedStyle(doc).getPropertyValue(v).trim();}
+  var NS='http://www.w3.org/2000/svg';
+
+  document.querySelectorAll('#domains .dom').forEach(function(d){ d.addEventListener('click',function(){ d.classList.toggle('open'); }); });
+
+  /* ---- training interactive ---- */
+  var A=[[35,72],[48,68],[30,58],[52,60],[40,80],[58,74],[44,52],[33,66]];   // class A (cyan) lower-left region
+  var B=[[112,34],[126,26],[104,40],[130,42],[118,22],[100,30],[122,48],[108,52]]; // class B (orange) upper-right
+  // separating line as fraction t: from bad(horizontal mid) to good(diagonal). Represent line by two endpoints.
+  var stage=document.getElementById('stage'), accEl=document.getElementById('acc'), tcap=document.getElementById('tcap');
+  var lineEl, step=0, MAX=3;
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function endpoints(t){
+    // t=0: 平行於資料軸(分不開, ~50%)；t=1: 完全分開。每一步準確率都上升
+    var u=0.42*t;
+    return [ lerp(34,55,u), lerp(68,5,u), lerp(122,100,u), lerp(34,95,u) ];
+  }
+  function side(p,e){ return (e[2]-e[0])*(p[1]-e[1])-(e[3]-e[1])*(p[0]-e[0]); }
+  function accuracy(e){
+    var ok=0,tot=A.length+B.length;
+    A.forEach(function(p){ if(side(p,e)>0) ok++; });
+    B.forEach(function(p){ if(side(p,e)<0) ok++; });
+    ok=Math.max(ok,tot-ok); // orientation-agnostic
+    return Math.round(ok/tot*100);
+  }
+  function drawStage(){
+    stage.innerHTML='';
+    var e=endpoints(step/MAX);
+    var ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',e[0]);ln.setAttribute('y1',e[1]);ln.setAttribute('x2',e[2]);ln.setAttribute('y2',e[3]);
+    ln.setAttribute('stroke',col('--gold'));ln.setAttribute('stroke-width',1.4);ln.setAttribute('stroke-dasharray','3 2');ln.setAttribute('opacity',.9);
+    stage.appendChild(ln);
+    function dot(p,c){ var el=document.createElementNS(NS,'circle'); el.setAttribute('cx',p[0]);el.setAttribute('cy',p[1]);el.setAttribute('r',3.4);el.setAttribute('fill',col(c));el.setAttribute('opacity',.92); stage.appendChild(el); }
+    A.forEach(function(p){dot(p,'--cyan');}); B.forEach(function(p){dot(p,'--orange');});
+    accEl.textContent=accuracy(e)+'%';
+  }
+  document.getElementById('train').addEventListener('click',function(){
+    if(step<MAX){ step++; drawStage();
+      tcap.textContent = step>=MAX ? '訓練完成：分隔線已能正確區分兩類。' : '模型依分錯的點，把線往正確方向修正了一點。';
+    }
+  });
+  document.getElementById('reset').addEventListener('click',function(){ step=0; drawStage(); tcap.textContent='初始的分隔線是隨機的，幾乎分不開。按「訓練一步」，模型會依錯誤修正。'; });
+  drawStage();
+
+  /* ---- word -> vector + similarity ---- */
+  var WV={ '貓':[.95,.10,.08,.12,.06],'狗':[.92,.14,.10,.09,.08],'老虎':[.90,.08,.06,.14,.05],
+    '汽車':[.10,.93,.12,.08,.10],'飛機':[.08,.90,.09,.14,.07],'蘋果':[.12,.10,.08,.06,.94],'香蕉':[.09,.13,.06,.10,.91],
+    '開心':[.10,.08,.93,.12,.09],'難過':[.13,.06,.90,.08,.11] };
+  var wvNote={ '貓':'貓、狗、老虎同為動物，第 1 維特別高，向量彼此相近。',
+    '狗':'狗與貓的向量幾乎一致——語意相近。','老虎':'老虎與貓、狗同群，皆由第 1 維主導。',
+    '汽車':'汽車屬交通工具，改由第 2 維主導，與動物明顯不同。','飛機':'飛機與汽車同群，向量相近。',
+    '蘋果':'蘋果屬水果，第 5 維特別高，自成一類。','香蕉':'香蕉與蘋果同群，向量相近。',
+    '開心':'開心屬情緒，由第 3 維主導。','難過':'難過與開心同屬情緒，向量相近（雖然語意相反）。' };
+  var pick=document.getElementById('w2vpick'),wvWord=document.getElementById('w2vword'),wvVec=document.getElementById('w2vvec'),wvNoteEl=document.getElementById('w2vnote');
+  var mainWords=['貓','狗','汽車','蘋果','開心'];
+  function showWV(w){ wvWord.textContent=w; wvVec.textContent='[ '+WV[w].map(function(n){return n.toFixed(2);}).join(',  ')+',  … ]'; wvNoteEl.textContent=wvNote[w];
+    Array.prototype.forEach.call(pick.children,function(b){ b.classList.toggle('sel',b.textContent===w); }); }
+  mainWords.forEach(function(w){ var b=document.createElement('button'); b.textContent=w; b.addEventListener('click',function(){showWV(w);}); pick.appendChild(b); });
+  showWV('貓');
+
+  var wa=document.getElementById('wa'),wb=document.getElementById('wb'),simfill=document.getElementById('simfill'),simval=document.getElementById('simval');
+  Object.keys(WV).forEach(function(w){ [wa,wb].forEach(function(sel){ var o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); }); });
+  wa.value='貓'; wb.value='狗';
+  function cos(a,b){ var d=0,na=0,nb=0; for(var i=0;i<a.length;i++){d+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];} return d/(Math.sqrt(na)*Math.sqrt(nb)); }
+  function updateSim(){ var s=cos(WV[wa.value],WV[wb.value]); var pct=Math.round(s*100);
+    simfill.style.width=pct+'%'; simval.innerHTML='語意相似度 ≈ <b style="color:'+(pct>80?'#00e676':pct>55?'#ffd060':'#ff6b35')+'">'+pct+'%</b>　'+(pct>80?'（同一類，非常相近）':pct>55?'（有點關係）':'（幾乎無關）'); }
+  wa.addEventListener('change',updateSim); wb.addEventListener('change',updateSim); updateSim();
+
+  /* ---- meaning map ---- */
+  var WORDS=[
+    {t:'貓',x:16,y:18,c:'--green'},{t:'狗',x:24,y:13,c:'--green'},{t:'老虎',x:12,y:27,c:'--green'},{t:'兔子',x:27,y:24,c:'--green'},
+    {t:'汽車',x:80,y:16,c:'--cyan'},{t:'公車',x:87,y:24,c:'--cyan'},{t:'腳踏車',x:74,y:12,c:'--cyan'},{t:'飛機',x:90,y:33,c:'--cyan'},
+    {t:'蘋果',x:18,y:50,c:'--gold'},{t:'香蕉',x:27,y:55,c:'--gold'},{t:'西瓜',x:12,y:44,c:'--gold'},
+    {t:'開心',x:78,y:50,c:'--purple'},{t:'難過',x:87,y:45,c:'--purple'},{t:'生氣',x:73,y:55,c:'--purple'}
+  ];
+  var map=document.getElementById('map'), readout=document.getElementById('readout');
+  var lineLayer=document.createElementNS(NS,'g'); map.appendChild(lineLayer); var nodes=[];
+  WORDS.forEach(function(w){
+    var g=document.createElementNS(NS,'g'); g.setAttribute('class','node');
+    var c=document.createElementNS(NS,'circle'); c.setAttribute('cx',w.x);c.setAttribute('cy',w.y);c.setAttribute('r',2.0);c.setAttribute('fill',col(w.c));
+    var t=document.createElementNS(NS,'text'); t.setAttribute('x',w.x);t.setAttribute('y',w.y-3.0);t.setAttribute('text-anchor','middle');t.textContent=w.t;
+    g.appendChild(c);g.appendChild(t);map.appendChild(g); w._c=c;w._t=t;nodes.push(w);
+    g.addEventListener('click',function(){select(w);});
+  });
+  function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}
+  function cat(c){return c==='--green'?'動物':c==='--cyan'?'交通工具':c==='--gold'?'水果':'情緒';}
+  function select(w){
+    lineLayer.innerHTML='';
+    var near=nodes.filter(function(n){return n!==w;}).map(function(n){return{n:n,d:dist(w,n)};}).sort(function(a,b){return a.d-b.d;}).slice(0,3);
+    nodes.forEach(function(n){n._c.setAttribute('r',1.6);n._c.setAttribute('opacity',.32);n._t.setAttribute('opacity',.32);n._t.setAttribute('font-weight','400');});
+    w._c.setAttribute('r',3.0);w._c.setAttribute('opacity',1);w._t.setAttribute('opacity',1);w._t.setAttribute('font-weight','800');
+    near.forEach(function(o){ o.n._c.setAttribute('r',2.4);o.n._c.setAttribute('opacity',1);o.n._t.setAttribute('opacity',1);
+      var ln=document.createElementNS(NS,'line'); ln.setAttribute('x1',w.x);ln.setAttribute('y1',w.y);ln.setAttribute('x2',o.n.x);ln.setAttribute('y2',o.n.y);
+      ln.setAttribute('stroke',col('--cyan'));ln.setAttribute('stroke-width',.5);ln.setAttribute('stroke-dasharray','1.2 1');ln.setAttribute('opacity',.85); lineLayer.appendChild(ln); });
+    readout.innerHTML='與「<b>'+w.t+'</b>」最相近的是：<b>'+near.map(function(o){return o.n.t;}).join('、')+'</b>　—— 皆屬於「'+cat(w.c)+'」。';
+  }
+})();
+</script>

@@ -1,0 +1,287 @@
+<style>
+  :root{
+    --bg:#070c18; --bg2:#0c1428; --bg3:#111c35; --panel:rgba(255,255,255,.03);
+    --cyan:#00d4ff; --green:#00e676; --orange:#ff6b35; --gold:#ffd060; --purple:#9b6dff; --red:#ff3b30;
+    --text:#dce8f4; --ink:#f2f8ff; --dim:#7a8fa8;
+    --line:rgba(0,212,255,.18); --line2:rgba(255,255,255,.07);
+    --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    --wrap:800px;
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .page{font-family:var(--sans); color:var(--text); font-size:17px; line-height:1.85; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(1200px 600px at 72% -6%,rgba(0,230,118,.09),transparent 60%),
+      linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px) 0 0/100% 42px,
+      linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px) 0 0/42px 100%, var(--bg);}
+  .wrap{max-width:var(--wrap); margin:0 auto; padding:0 22px}
+  h1,h2,h3{color:var(--ink); line-height:1.32; text-wrap:balance; margin:0}
+  .prog{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--green),var(--cyan)); width:0%; z-index:50; box-shadow:0 0 10px var(--cyan)}
+  .hero{padding:76px 0 54px; border-bottom:1px solid var(--line2)}
+  .hero .wrap{max-width:860px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.28em; text-transform:uppercase; color:var(--green); margin-bottom:20px}
+  .hero h1{font-size:42px; font-weight:800; letter-spacing:-.01em; color:#fff; text-shadow:0 0 26px rgba(0,230,118,.26)}
+  .hero .sub{color:#9fb2c6; font-size:16px; margin:18px 0 0; max-width:60ch; font-family:var(--mono); line-height:1.7}
+  .toc{display:flex; flex-wrap:wrap; margin-top:30px; border:1px solid var(--line2); border-radius:12px; overflow:hidden}
+  .toc a{flex:1; min-width:150px; padding:14px 16px; color:var(--text); text-decoration:none; border-right:1px solid var(--line2); transition:.15s; font-size:14.5px}
+  .toc a:last-child{border-right:none} .toc a:hover{background:rgba(0,230,118,.07); color:#fff}
+  .toc a .n{font-family:var(--mono); font-size:11px; color:var(--green); display:block; margin-bottom:3px}
+  section{padding:56px 0; border-bottom:1px solid var(--line2)}
+  .snum{font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:.08em}
+  h2{font-size:28px; font-weight:800; margin:8px 0 8px; color:#fff}
+  .lead{font-size:17px; color:#aebfd0; margin:6px 0 22px; max-width:62ch}
+  p{margin:15px 0; max-width:64ch} strong{color:#fff; font-weight:700} .hl{color:var(--gold); font-weight:700}
+  .en{font-family:var(--mono); color:var(--dim); font-size:.82em}
+  .box{background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:20px; margin:20px 0}
+  .cap{font-size:14px; color:var(--dim); margin-top:12px}
+  .btn{font-family:var(--sans); font-size:14.5px; background:rgba(0,212,255,.10); color:var(--cyan); border:1px solid var(--line); padding:10px 18px; border-radius:9px; cursor:pointer; transition:.15s}
+  .btn:hover{background:rgba(0,212,255,.18)} .btn:disabled{opacity:.4; cursor:default}
+  .btn.ghost{background:transparent;color:var(--dim)}
+
+  /* generation */
+  .genout{font-size:24px; color:#fff; background:rgba(0,0,0,.28); border:1px solid var(--line2); border-radius:12px; padding:16px 18px; min-height:60px; line-height:1.6}
+  .genout .seed{color:var(--dim)} .genout .cur{color:var(--green); border-bottom:2px solid var(--green)}
+  .caret{display:inline-block;width:2px;height:1em;background:var(--cyan);margin-left:2px;vertical-align:-2px;animation:bl 1s step-end infinite}
+  @keyframes bl{50%{opacity:0}} @media(prefers-reduced-motion:reduce){.caret{animation:none}}
+  .dist{margin:16px 0 4px} .drow{display:flex; align-items:center; gap:12px; margin:8px 0}
+  .drow .ch{width:44px; font-size:20px; color:var(--text); text-align:center}
+  .drow .bar{flex:1; height:16px; background:rgba(0,0,0,.3); border:1px solid var(--line2); border-radius:999px; overflow:hidden}
+  .drow .bar>div{height:100%; border-radius:999px; transition:width .35s}
+  .drow.top .ch{color:var(--green); font-weight:700}
+  .drow .pv{width:52px; font-family:var(--mono); font-size:13px; color:var(--dim); text-align:right}
+  .ctrl{display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap}
+
+  /* temperature */
+  .tctrl{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+  .tctrl input[type=range]{flex:1; min-width:180px; accent-color:var(--cyan)}
+  .tval{font-family:var(--mono); font-size:15px; color:var(--gold); min-width:78px}
+  .tnote{font-size:14.5px; color:#c3d1e0; margin-top:12px; min-height:22px}
+
+  /* training two-stage */
+  .stages{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0}
+  @media(max-width:560px){.stages{grid-template-columns:1fr}}
+  .stg{border-radius:14px; padding:20px; border:1px solid var(--line2); background:var(--panel)}
+  .stg .n{font-family:var(--mono); font-size:12px; color:var(--cyan)}
+  .stg h3{font-size:18px; color:#fff; margin:6px 0 8px} .stg p{font-size:14.5px; color:#a9bccf; margin:0}
+  .stg.one{border-color:rgba(0,212,255,.3)} .stg.two{border-color:rgba(155,109,255,.3)}
+  .stg.two .n{color:var(--purple)}
+
+  /* context window */
+  .ctxwrap{margin:16px 0} .ctxtrack{display:flex; flex-wrap:wrap; gap:5px}
+  .ctxtrack span{padding:5px 8px; border-radius:6px; font-size:14px; background:rgba(255,255,255,.03); border:1px solid var(--line2); color:var(--dim); transition:.2s}
+  .ctxtrack span.win{background:rgba(0,212,255,.14); border-color:var(--cyan); color:#fff}
+  .ctxtrack span.lost{opacity:.3; text-decoration:line-through}
+
+  .warn{background:rgba(255,107,53,.07); border:1px solid rgba(255,107,53,.3); border-radius:14px; padding:18px 20px; margin:18px 0}
+  .warn h4{color:var(--orange); margin:0 0 8px; font-size:16px}
+  .warn .q{font-size:15px; color:#c3d1e0} .warn .a{font-size:15px; color:#fff; margin-top:6px}
+  .warn .tag{font-family:var(--mono); font-size:12px; color:var(--orange); border:1px solid rgba(255,107,53,.4); padding:2px 8px; border-radius:6px; margin-left:8px}
+
+  .recap{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:26px; margin:20px 0}
+  .recap ul{margin:0; padding-left:0; list-style:none; display:grid; gap:11px}
+  .recap li{display:flex; gap:12px; font-size:16px} .recap li .k{color:var(--green); font-weight:800; font-family:var(--mono)}
+  .done{display:flex; align-items:center; gap:14px; background:linear-gradient(100deg,rgba(0,230,118,.10),rgba(0,212,255,.10)); border:1px solid var(--line); border-radius:16px; padding:20px 24px; margin-top:18px; flex-wrap:wrap}
+  .done .lb{font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--green)}
+  .done h3{color:#fff; font-size:19px; margin:3px 0 0}
+  .foot{color:var(--dim); font-size:13px; text-align:center; padding:32px 0 52px; font-family:var(--mono)}
+  @media(max-width:520px){ .hero h1{font-size:31px} h2{font-size:23px} .page{font-size:16px} }
+</style>
+
+<div class="prog" id="prog"></div>
+<div class="page">
+  <header class="hero"><div class="wrap">
+    <div class="eyebrow">AI 教材 · 第三課</div>
+    <h1>ChatGPT 如何生成答案</h1>
+    <div class="sub">文字接龍（下一個字預測） · 機率與溫度 · 兩階段訓練 · 上下文與幻覺</div>
+    <nav class="toc">
+      <a href="#s1"><span class="n">01</span>文字接龍</a>
+      <a href="#s2"><span class="n">02</span>機率與溫度</a>
+      <a href="#s3"><span class="n">03</span>如何訓練</a>
+      <a href="#s4"><span class="n">04</span>會忘、會編</a>
+    </nav>
+  </div></header>
+
+  <section id="s1"><div class="wrap">
+    <div class="snum">01</div>
+    <h2>核心其實只有一件事：預測下一個字</h2>
+    <p class="lead">ChatGPT 看起來像在「思考」，但它的核心機制非常單純：<strong>預測下一個字</strong>。
+    給它一段開頭，它算出「下一個字最可能是什麼」，選一個接上去，再把整段當成新的輸入、預測再下一個——
+    一個字一個字，長出整段回答。<strong>按按鈕</strong>，親手接一次：</p>
+    <div class="box">
+      <div class="genout" id="genout"><span class="seed">人工智慧會</span><span class="caret"></span></div>
+      <div class="dist" id="dist"></div>
+      <div class="ctrl">
+        <button class="btn" id="gen">生成下一個字 →</button>
+        <button class="btn ghost" id="genreset">重置</button>
+        <span class="cap" id="gencap">上方灰字是開頭。下方長條是「下一個字」的各種可能與機率，綠色是最高的。</span>
+      </div>
+    </div>
+    <p>所以 ChatGPT 本質上就是一個<strong>超強的自動接龍</strong>——只是它接得非常好，
+    好到看起來像「懂」你。它並沒有預先想好整句話，而是<span class="hl">一次只決定一個字</span>。</p>
+  </div></section>
+
+  <section id="s2"><div class="wrap">
+    <div class="snum">02</div>
+    <h2>機率與「溫度」</h2>
+    <p class="lead">每一步，它拿到的其實是一份<strong>下一個字的機率分布</strong>，再從中挑一個。
+    怎麼挑，由一個叫「<strong>溫度 <span class="en">temperature</span></strong>」的旋鈕控制。拖動看看分布怎麼變：</p>
+    <div class="box">
+      <div class="tctrl">
+        <span style="font-size:14px;color:var(--dim)">溫度</span>
+        <input type="range" id="temp" min="0.3" max="1.8" step="0.1" value="1.0">
+        <span class="tval" id="tval">1.0（中）</span>
+      </div>
+      <div class="dist" id="tdist"></div>
+      <div class="ctrl"><button class="btn" id="sample">抽樣一次 🎲</button><span class="cap" id="sres"></span></div>
+      <div class="tnote" id="tnote"></div>
+    </div>
+    <p>低溫：分布尖銳，幾乎永遠選最高的字——<strong>穩定但單調、容易重複</strong>。
+    高溫：分布變平，冷門字也有機會被選中——<strong>有創意，但也更容易出錯</strong>。
+    這就是為什麼<span class="hl">同一個問題，ChatGPT 每次的回答都不太一樣</span>。</p>
+  </div></section>
+
+  <section id="s3"><div class="wrap">
+    <div class="snum">03</div>
+    <h2>它怎麼學會接得這麼好？兩階段訓練</h2>
+    <p class="lead">ChatGPT 的能力，來自兩個訓練階段：</p>
+    <div class="stages">
+      <div class="stg one"><div class="n">STAGE 1</div><h3>預訓練 <span class="en">Pre-training</span></h3>
+        <p>讀進<strong style="color:#fff">整個網際網路規模</strong>的文字，反覆練習「遮住下一個字、猜猜看」。練到能接得很好，累積了海量知識——但它只會接龍，不一定聽你的話。</p></div>
+      <div class="stg two"><div class="n">STAGE 2</div><h3>人類回饋 <span class="en">RLHF</span></h3>
+        <p>由人類示範「好的回答長什麼樣」、並替它的回答評分，模型再據此調整。這一步教會它<strong style="color:#fff">聽懂指令、有禮貌、給得上幫助</strong>。</p></div>
+    </div>
+    <p>先「博覽群書」（預訓練），再「學會應對」（人類回饋）——這就是為什麼 ChatGPT 既知識豐富，
+    又能貼著你的問題回答。</p>
+  </div></section>
+
+  <section id="s4"><div class="wrap">
+    <div class="snum">04</div>
+    <h2>它的兩個極限：會忘、會編</h2>
+    <p class="lead"><strong>極限一：會忘。</strong> 它一次只能「看到」有限長度的文字，稱為
+    <strong>上下文視窗 <span class="en">context window</span></strong>。像一個滑動的視窗，只照亮最近這一段；
+    超出範圍的，就被遺忘。按按鈕，讓對話繼續，看最早的內容如何被推出視窗：</p>
+    <div class="box">
+      <div class="ctxwrap"><div class="ctxtrack" id="ctx"></div></div>
+      <div class="ctrl"><button class="btn" id="ctxnext">再聊一句 →</button><button class="btn ghost" id="ctxreset">重置</button>
+        <span class="cap" id="ctxcap">亮起來的是模型「看得到」的範圍。</span></div>
+    </div>
+    <p style="margin-top:26px"><strong>極限二：會編（幻覺）。</strong> 它的目標是接出「<span class="hl">聽起來合理</span>」的下一個字，
+    而不是「查證真相」。所以有時會<strong>一本正經地編造</strong>——看似正確、其實錯誤的答案。這個現象稱為
+    <strong>幻覺 <span class="en">hallucination</span></strong>。</p>
+    <div class="warn">
+      <h4>幻覺範例 <span class="tag">看似合理・實為錯誤</span></h4>
+      <div class="q">問：「請介紹一本張愛玲寫的科幻小說。」</div>
+      <div class="a">答：「《星際傾城》是張愛玲於 1948 年出版的科幻代表作……」<br>
+      <span style="color:var(--orange)">— 張愛玲從未寫過這本書。但這段話讀起來非常有模有樣。</span></div>
+    </div>
+    <p>所以結論很明確：<strong>ChatGPT 是強大的工具，但它的輸出一定要自己查證</strong>——
+    尤其是牽涉到事實、數據、人名的時候。它負責「生成」，判斷真假的責任在你。</p>
+  </div></section>
+
+  <section style="border-bottom:none"><div class="wrap">
+    <div class="snum">回顧</div>
+    <h2>本課重點</h2>
+    <div class="recap"><ul>
+      <li><span class="k">01</span><span>ChatGPT 的核心＝<strong>一次預測一個字</strong>，接回去再預測，長出整段回答。</span></li>
+      <li><span class="k">02</span><span>每步得到<strong>機率分布</strong>，由<strong>溫度</strong>決定挑法——低溫穩定、高溫有創意。</span></li>
+      <li><span class="k">03</span><span>兩階段訓練：<strong>預訓練</strong>（博覽群書）＋<strong>人類回饋 RLHF</strong>（學會應對）。</span></li>
+      <li><span class="k">04</span><span>兩個極限：<strong>上下文視窗會忘</strong>、<strong>幻覺會編</strong>——輸出務必查證。</span></li>
+    </ul>
+      <div class="done"><div><div class="lb">三堂課完成</div><h3>應用與表徵 → 注意力與 Transformer → 生成與極限</h3></div></div>
+    </div>
+    <div class="foot">2026 PLAYCHIP · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
+  </div></section>
+</div>
+
+<script>
+(function(){
+  var doc=document.documentElement;
+  var prog=document.getElementById('prog');
+  window.addEventListener('scroll',function(){ prog.style.width=(doc.scrollTop/((doc.scrollHeight-doc.clientHeight)||1)*100)+'%'; },{passive:true});
+
+  /* ---- next-token generation ---- */
+  var SEED='人工智慧會';
+  var STEPS=[
+    [['改',.42],['讓',.20],['取',.15],['幫',.13],['毀',.10]],
+    [['變',.94],['善',.03],['寫',.02],['造',.01]],
+    [['世',.52],['我',.28],['未',.15],['你',.05]],
+    [['界',.97],['代',.02],['人',.01]],
+    [['。',.60],['，',.30],['！',.10]]
+  ];
+  var genout=document.getElementById('genout'), distEl=document.getElementById('dist'),
+      genBtn=document.getElementById('gen'), gencap=document.getElementById('gencap');
+  var gi=0, built='';
+  function renderDist(step){
+    distEl.innerHTML='';
+    step.forEach(function(r,idx){
+      var row=document.createElement('div'); row.className='drow'+(idx===0?' top':'');
+      var colr=idx===0?'linear-gradient(90deg,#00e676,#00d4ff)':'linear-gradient(90deg,#3a4a5f,#4a5f7a)';
+      row.innerHTML='<div class="ch">'+r[0]+'</div><div class="bar"><div style="width:'+(r[1]*100)+'%;background:'+colr+'"></div></div><div class="pv">'+Math.round(r[1]*100)+'%</div>';
+      distEl.appendChild(row);
+    });
+  }
+  function renderOut(){
+    genout.innerHTML='<span class="seed">'+SEED+'</span>'+(built?'<span class="cur">'+built+'</span>':'')+'<span class="caret"></span>';
+  }
+  function refresh(){
+    renderOut();
+    if(gi<STEPS.length){ renderDist(STEPS[gi]); genBtn.disabled=false;
+      gencap.textContent='下方是「下一個字」的機率，綠色最高。按按鈕，接上最高的那個字。'; }
+    else{ distEl.innerHTML=''; genBtn.disabled=true;
+      gencap.innerHTML='完成：「<b style="color:#fff">'+SEED+built+'</b>」。真實的 ChatGPT 就是這樣，一次一個字接出整段回答。'; }
+  }
+  genBtn.addEventListener('click',function(){ if(gi<STEPS.length){ built+=STEPS[gi][0][0]; gi++; refresh(); } });
+  document.getElementById('genreset').addEventListener('click',function(){ gi=0; built=''; refresh(); });
+  refresh();
+
+  /* ---- temperature ---- */
+  var BASE=[['好',.52],['棒',.24],['差',.13],['複雜',.08],['藍',.03]]; // 提示：今天的心情很___
+  var tempEl=document.getElementById('temp'), tval=document.getElementById('tval'),
+      tdist=document.getElementById('tdist'), tnote=document.getElementById('tnote'), sres=document.getElementById('sres');
+  function reshaped(T){
+    var ps=BASE.map(function(r){ return Math.pow(r[1],1/T); });
+    var s=ps.reduce(function(a,b){return a+b;},0);
+    return BASE.map(function(r,i){ return [r[0], ps[i]/s]; });
+  }
+  var cur=[];
+  function renderT(){
+    var T=parseFloat(tempEl.value); cur=reshaped(T);
+    tval.textContent=T.toFixed(1)+'（'+(T<0.6?'低':T>1.3?'高':'中')+'）';
+    tdist.innerHTML='';
+    cur.slice().sort(function(a,b){return b[1]-a[1];}).forEach(function(r,idx){
+      var row=document.createElement('div'); row.className='drow'+(idx===0?' top':'');
+      var colr=idx===0?'linear-gradient(90deg,#00e676,#00d4ff)':'linear-gradient(90deg,#3a4a5f,#4a5f7a)';
+      row.innerHTML='<div class="ch">'+r[0]+'</div><div class="bar"><div style="width:'+(r[1]*100)+'%;background:'+colr+'"></div></div><div class="pv">'+Math.round(r[1]*100)+'%</div>';
+      tdist.appendChild(row);
+    });
+    tnote.textContent = T<0.6 ? '低溫：分布非常尖銳，幾乎總是選「好」——穩定、可重複，但單調。'
+      : T>1.3 ? '高溫：分布變平，連「藍」這種奇怪的字都可能被選中——有創意，但也可能離譜。'
+      : '中溫：偏好高機率的字，同時保留一些變化，是最常見的設定。';
+    sres.textContent='';
+  }
+  tempEl.addEventListener('input',renderT); renderT();
+  document.getElementById('sample').addEventListener('click',function(){
+    var r=Math.random(), acc=0, chosen=cur[0][0];
+    for(var i=0;i<cur.length;i++){ acc+=cur[i][1]; if(r<=acc){ chosen=cur[i][0]; break; } }
+    sres.innerHTML='這次抽到：「<b style="color:var(--green)">'+chosen+'</b>」';
+  });
+
+  /* ---- context window ---- */
+  var LINES=['你好','我叫小明','我養了一隻貓','牠叫咪咪','我最喜歡打籃球','昨天我去看電影','電影很好看','我最喜歡的顏色是','我剛剛說我叫什麼？'];
+  var WIN=5, ci=4;
+  var ctx=document.getElementById('ctx'), ctxcap=document.getElementById('ctxcap');
+  function renderCtx(){
+    ctx.innerHTML='';
+    for(var j=0;j<ci;j++){
+      var s=document.createElement('span'); s.textContent=LINES[j];
+      if(j>=ci-WIN) s.className='win'; else s.className='lost';
+      ctx.appendChild(s);
+    }
+    if(ci>=LINES.length && LINES[ci-1]==='我剛剛說我叫什麼？'){
+      ctxcap.innerHTML='注意：「我叫小明」已被推出視窗（劃掉）——此時模型<b style="color:var(--orange)">看不到</b>它，可能答不出你的名字。';
+    } else { ctxcap.textContent='亮起來的是模型「看得到」的範圍；灰掉劃線的已超出視窗、被遺忘。'; }
+  }
+  document.getElementById('ctxnext').addEventListener('click',function(){ if(ci<LINES.length) ci++; renderCtx(); });
+  document.getElementById('ctxreset').addEventListener('click',function(){ ci=4; renderCtx(); });
+  renderCtx();
+})();
+</script>
