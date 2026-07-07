@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>晶片是怎麼設計出來的 · 互動教材 · 陳泓光</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#0b0a06; --bg2:#14110a; --panel:rgba(255,255,255,.03);
+    --amber:#f5b027; --amber2:#ffd060; --cyan:#38c6d9; --green:#57d98a; --red:#ff5a4d; --purple:#b08cff; --dimwire:#4a4534;
+    --text:#ece4d4; --ink:#fff8ec; --dim:#938a76;
+    --line:rgba(245,176,39,.20); --line2:rgba(255,255,255,.07);
+    --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    --wrap:820px;
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .page{font-family:var(--sans); color:var(--text); font-size:17px; line-height:1.85; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(1200px 600px at 72% -6%,rgba(245,176,39,.10),transparent 60%),
+      linear-gradient(rgba(245,176,39,.03) 1px,transparent 1px) 0 0/100% 42px,
+      linear-gradient(90deg,rgba(245,176,39,.03) 1px,transparent 1px) 0 0/42px 100%, var(--bg);}
+  .wrap{max-width:var(--wrap); margin:0 auto; padding:0 22px}
+  h1,h2,h3{color:var(--ink); line-height:1.32; text-wrap:balance; margin:0}
+  .prog{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--amber),var(--amber2)); width:0%; z-index:50; box-shadow:0 0 10px var(--amber)}
+  .hero{padding:76px 0 52px; border-bottom:1px solid var(--line2)}
+  .hero .wrap{max-width:860px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--amber); margin-bottom:18px}
+  .hero h1{font-size:41px; font-weight:800; color:#fff; letter-spacing:-.01em; text-shadow:0 0 26px rgba(245,176,39,.28)}
+  .hero .sub{color:#b9ad93; font-size:16px; margin:18px 0 0; font-family:var(--mono); line-height:1.7}
+  .toc{display:flex; flex-wrap:wrap; margin-top:30px; border:1px solid var(--line2); border-radius:12px; overflow:hidden}
+  .toc a{flex:1; min-width:140px; padding:14px 16px; color:var(--text); text-decoration:none; border-right:1px solid var(--line2); transition:.15s; font-size:14.5px}
+  .toc a:last-child{border-right:none} .toc a:hover{background:rgba(245,176,39,.07); color:#fff}
+  .toc a .n{font-family:var(--mono); font-size:11px; color:var(--amber); display:block; margin-bottom:3px}
+  section{padding:54px 0; border-bottom:1px solid var(--line2)}
+  .snum{font-family:var(--mono); font-size:13px; color:var(--amber); letter-spacing:.08em}
+  h2{font-size:27px; font-weight:800; margin:8px 0 8px; color:#fff}
+  h3{font-size:19px; color:#fff; margin:26px 0 6px}
+  .lead{font-size:17px; color:#c7bda6; margin:6px 0 22px; max-width:62ch}
+  p{margin:15px 0; max-width:64ch} strong{color:#fff; font-weight:700} .hl{color:var(--amber2); font-weight:700}
+  .en{font-family:var(--mono); color:var(--dim); font-size:.82em}
+  .box{background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:20px; margin:20px 0}
+  .cap{font-size:14px; color:var(--dim); margin-top:12px}
+  .btn{font-family:var(--sans); font-size:14.5px; background:rgba(245,176,39,.12); color:var(--amber2); border:1px solid var(--line); padding:9px 18px; border-radius:9px; cursor:pointer; transition:.15s}
+  .btn:hover{background:rgba(245,176,39,.20)} .btn:disabled{opacity:.4; cursor:default} .btn.ghost{background:transparent;color:var(--dim)}
+
+  /* matching game */
+  .match{display:grid; grid-template-columns:1fr 34px 1fr; gap:10px; align-items:stretch}
+  .mcol{display:flex; flex-direction:column; gap:9px}
+  .mitem{padding:11px 12px; border:1px solid var(--line2); border-radius:10px; background:var(--panel); cursor:pointer; font-size:14.5px; color:var(--text); transition:.15s; min-height:48px; display:flex; align-items:center}
+  .mitem .tag{font-family:var(--mono); font-size:11px; color:var(--amber); margin-right:8px; flex:none}
+  .mitem:hover{border-color:var(--line)} .mitem.sel{border-color:var(--amber); background:rgba(245,176,39,.12)}
+  .mitem.done{border-color:var(--green); background:rgba(87,217,138,.10); color:#cfeeda; cursor:default}
+  .mitem.bad{border-color:var(--red); animation:sh .3s}
+  @keyframes sh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .mmid{display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--dim); font-size:12px}
+  .mbar{display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-family:var(--mono); font-size:13px; color:var(--dim)}
+  .clr{font-size:18px; font-weight:800; color:var(--green); display:none} .clr.show{display:inline; animation:pop .4s}
+  @keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* circuits */
+  svg.circuit{width:100%; max-width:400px; height:auto; display:block; margin:2px auto 4px}
+  .wire{transition:stroke .18s} .gatebody{transition:.18s}
+  .toggles{display:flex; gap:20px; justify-content:center; margin:8px 0; flex-wrap:wrap}
+  .toggle{display:flex; align-items:center; gap:9px}
+  .toggle .lb{font-size:19px; font-weight:800; color:#fff}
+  .bit{width:56px; height:36px; border-radius:9px; border:1px solid var(--line); background:rgba(0,0,0,.3); color:var(--amber2); font-family:var(--mono); font-size:18px; font-weight:700; cursor:pointer; transition:.15s}
+  .bit.one{background:rgba(245,176,39,.22); color:#fff; border-color:var(--amber)}
+  .outs{display:flex; gap:26px; justify-content:center; margin-top:8px}
+  .outbox{text-align:center} .outbox .on{font-family:var(--mono); font-size:12px; color:var(--dim)} .outbox .ov{font-size:26px; font-weight:800; color:#fff}
+  .outbox .ov.hot{color:var(--green); text-shadow:0 0 14px rgba(87,217,138,.4)}
+  .sum{margin-top:10px; font-size:16px; color:var(--text); text-align:center} .sum b{color:var(--amber2); font-family:var(--mono); font-size:20px}
+  .htable{margin:14px auto 0; border-collapse:collapse; font-family:var(--mono); font-size:13.5px}
+  .htable td,.htable th{border:1px solid var(--line2); padding:5px 12px; text-align:center; color:var(--text)}
+  .htable th{color:var(--dim)} .htable tr.cur td{background:rgba(245,176,39,.14); color:#fff}
+  .blockdiag{display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0; font-family:var(--mono); font-size:13px}
+  .blk{border:1px solid var(--line); border-radius:9px; padding:9px 12px; color:#fff; background:rgba(245,176,39,.08)}
+  .blk.or{background:rgba(56,198,217,.08); border-color:rgba(56,198,217,.3)} .ar{color:var(--dim)}
+
+  /* accumulator */
+  .accflow{display:flex; align-items:center; gap:10px; justify-content:center; flex-wrap:wrap; margin:8px 0 14px; font-family:var(--mono); font-size:14px}
+  .accbox{border:1px solid var(--line); border-radius:10px; padding:12px 16px; color:#fff; text-align:center; min-width:82px}
+  .accbox .lab{font-size:11px; color:var(--dim)} .accbox .val{font-size:22px; font-weight:800; color:var(--amber2)}
+  .accbox.reg .val{color:var(--green)} .fb{color:var(--dim); font-size:12px}
+
+  /* placement */
+  .plwrap{display:grid; grid-template-columns:1fr 160px; gap:18px} @media(max-width:600px){.plwrap{grid-template-columns:1fr}}
+  .gridbox{position:relative; width:100%; aspect-ratio:1; background:rgba(0,0,0,.25); border-radius:12px; border:1px solid var(--line2); touch-action:none}
+  .gridbg{position:absolute; inset:0; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(4,1fr)}
+  .gridbg > i{border:1px dashed rgba(255,255,255,.10)}
+  .wireLayer{position:absolute; inset:0; pointer-events:none}
+  .chip2{position:absolute; width:22%; height:22%; border-radius:10px; background:rgba(245,176,39,.9); color:#1a1405; font-size:12.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; cursor:grab; user-select:none; box-shadow:0 3px 12px rgba(0,0,0,.4); touch-action:none; z-index:2; text-align:center; line-height:1.1}
+  .chip2.drag{cursor:grabbing; z-index:5; box-shadow:0 6px 20px rgba(245,176,39,.4)}
+  .tray{display:flex; flex-direction:column; gap:8px}
+  .tray .slot{border:1px dashed var(--line2); border-radius:10px; height:42px; position:relative}
+  .netlist{font-family:var(--mono); font-size:12.5px; color:var(--dim); margin-top:8px; line-height:1.7}
+  .plmeta{margin-top:12px; display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  .score{font-family:var(--mono); font-size:15px; color:var(--text)} .score b{color:var(--amber2); font-size:19px} .score.good b{color:var(--green)}
+
+  /* DRC */
+  .rulebox{background:rgba(0,0,0,.22); border:1px solid var(--line2); border-radius:12px; padding:14px 18px; margin:10px 0 16px}
+  .rulebox .rt{font-family:var(--mono); font-size:12px; color:var(--amber); margin-bottom:8px}
+  .rulebox ul{margin:0; padding-left:18px; font-size:14.5px; color:#c7bda6; line-height:1.9} .rulebox b{color:#fff}
+  svg.drc{width:100%; height:auto; aspect-ratio:16/9; display:block; background:#0a0805; border-radius:12px; border:1px solid var(--line2)}
+  .hot{cursor:pointer} .found{fill:none; stroke:var(--red); stroke-width:2}
+  .drcbar{display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap}
+  .drcstat{font-family:var(--mono); font-size:15px; color:var(--text)} .drcstat b{color:var(--amber2)}
+  .drctip{font-size:14px; min-height:20px; margin-top:8px}
+
+  .recap{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:26px; margin:20px 0}
+  .recap ul{margin:0; padding-left:0; list-style:none; display:grid; gap:11px}
+  .recap li{display:flex; gap:12px; font-size:16px} .recap li .k{color:var(--amber); font-weight:800; font-family:var(--mono)}
+  .foot{color:var(--dim); font-size:13px; text-align:center; padding:32px 0 52px; font-family:var(--mono)}
+  @media(max-width:520px){ .hero h1{font-size:31px} h2{font-size:23px} .page{font-size:16px} }
+</style>
+
+<div class="prog" id="prog"></div>
+<div class="page">
+  <header class="hero"><div class="wrap">
+    <div class="eyebrow">半導體課程 · 積體電路設計 EDA</div>
+    <h1>會蓋房子，就會設計晶片</h1>
+    <div class="sub">5 關流程對應蓋房子 · 從邏輯閘疊出加法器與積分器 · 擺放繞線最佳化 · DRC 抓錯</div>
+    <nav class="toc">
+      <a href="#s1"><span class="n">01</span>五關配對</a>
+      <a href="#s2"><span class="n">02</span>從閘到積分器</a>
+      <a href="#s3"><span class="n">03</span>擺放繞線</a>
+      <a href="#s4"><span class="n">04</span>DRC 抓錯</a>
+    </nav>
+  </div></header>
+
+  <section id="s1"><div class="wrap">
+    <div class="snum">01</div>
+    <h2>五關配對：晶片流程 ↔ 蓋房子</h2>
+    <p class="lead">設計晶片的 5 個步驟，跟蓋一棟房子一模一樣。右邊的蓋房子步驟被打散了——
+    <strong>先點左邊一關，再點右邊對應的步驟</strong>。配對成功會亮綠鎖定，五關全配對就破關。</p>
+    <div class="box">
+      <div class="match"><div class="mcol" id="mLeft"></div><div class="mmid">配<br>對</div><div class="mcol" id="mRight"></div></div>
+      <div class="mbar"><span id="mcount">已配對 0 / 5</span><span class="clr" id="mclr">🎉 五關全通 —— 晶片誕生！</span></div>
+    </div>
+    <p>晶片設計其實就是：<span class="hl">想清楚 → 畫出來 → 擺整齊 → 檢查好 → 做出來</span>。跟蓋房子一樣的邏輯。</p>
+  </div></section>
+
+  <section id="s2"><div class="wrap">
+    <div class="snum">02</div>
+    <h2>從邏輯閘，一路疊到積分器</h2>
+    <p class="lead">寫好 RTL、真正擺上晶片之前，電腦會先把你寫的功能<strong>自動變成一個個邏輯閘電路</strong>；這一段就把它<strong>打開來看</strong>。電路底層只有 <strong>0 和 1</strong>，
+    用邏輯閘組成半加器，半加器疊成全加器，全加器串成加法器，加法器加上回授就成了積分器。一層一層疊上去——</p>
+
+    <h3>① 半加器（切 A、B，看訊號亮起來）</h3>
+    <div class="box">
+      <div class="toggles">
+        <div class="toggle"><span class="lb">A</span><button class="bit" id="bitA">0</button></div>
+        <div class="toggle"><span class="lb">B</span><button class="bit" id="bitB">0</button></div>
+      </div>
+      <svg class="circuit" viewBox="0 0 320 175" role="img" aria-label="半加器電路">
+        <g stroke-width="3" fill="none">
+          <path class="wire" id="wA1" d="M40 48 L150 48"/>
+          <path class="wire" id="wA2" d="M40 48 L72 48 L72 128 L150 128"/>
+          <path class="wire" id="wB1" d="M40 128 L92 128 L92 68 L150 68"/>
+          <path class="wire" id="wB2" d="M40 128 L150 148"/>
+          <path class="wire" id="wS" d="M196 58 L286 58"/>
+          <path class="wire" id="wC" d="M196 138 L286 138"/>
+        </g>
+        <circle cx="40" cy="48" r="6" fill="#f5b027"/><text x="20" y="53" fill="#ece4d4" font-size="15" font-family="monospace">A</text>
+        <circle cx="40" cy="128" r="6" fill="#f5b027"/><text x="20" y="133" fill="#ece4d4" font-size="15" font-family="monospace">B</text>
+        <g id="gXOR"><path class="gatebody" d="M150 38 Q176 38 196 58 Q176 78 150 78 Q163 58 150 38 Z" fill="rgba(245,176,39,.12)" stroke="#f5b027" stroke-width="2"/>
+          <path d="M143 38 Q156 58 143 78" fill="none" stroke="#f5b027" stroke-width="2"/>
+          <text x="156" y="62" fill="#ffd060" font-size="11" font-family="monospace">XOR</text></g>
+        <g id="gAND"><path class="gatebody" d="M150 118 h20 a20 20 0 0 1 0 40 h-20 Z" fill="rgba(56,198,217,.10)" stroke="#38c6d9" stroke-width="2"/>
+          <text x="153" y="142" fill="#8fe6ff" font-size="11" font-family="monospace">AND</text></g>
+        <circle id="dS" cx="286" cy="58" r="8" fill="#2a2418" stroke="#f5b027" stroke-width="2"/><text id="tS" x="282" y="63" font-size="13" font-family="monospace" fill="#938a76">0</text>
+        <circle id="dC" cx="286" cy="138" r="8" fill="#2a2418" stroke="#38c6d9" stroke-width="2"/><text id="tC" x="282" y="143" font-size="13" font-family="monospace" fill="#938a76">0</text>
+        <text x="300" y="47" fill="#938a76" font-size="12">S</text><text x="300" y="127" fill="#938a76" font-size="12">C</text>
+      </svg>
+      <div class="sum" id="hasum"></div>
+      <table class="htable" id="htable"><thead><tr><th>A</th><th>B</th><th>S 和</th><th>C 進位</th></tr></thead><tbody></tbody></table>
+      <div class="cap">XOR＝兩個不一樣才吐 1（算「和」）；AND＝兩個都是 1 才吐 1（算「進位」）。</div>
+    </div>
+
+    <h3>② 全加器（多了「進位輸入」，才能串接）</h3>
+    <p class="lead">半加器只能算一位，遇到進位就卡住。全加器多一個進位輸入 <span class="en">Cin</span>，
+    就能把多個全加器串起來，做出<strong>多位元加法</strong>。它其實 ＝ <strong>兩個半加器 ＋ 一個 OR</strong>。</p>
+    <div class="box">
+      <div class="toggles">
+        <div class="toggle"><span class="lb">A</span><button class="bit" id="fA">0</button></div>
+        <div class="toggle"><span class="lb">B</span><button class="bit" id="fB">0</button></div>
+        <div class="toggle"><span class="lb">Cin</span><button class="bit" id="fCin">0</button></div>
+      </div>
+      <svg class="circuit" id="faSvg" style="max-width:470px" viewBox="0 0 360 200" role="img" aria-label="全加器電路">
+        <g stroke-width="2.6" fill="none">
+          <path class="wire" data-sig="A" d="M34 40 L70 44"/>
+          <path class="wire" data-sig="B" d="M34 72 L70 68"/>
+          <path class="wire" data-sig="s1" d="M140 44 L200 44"/>
+          <path class="wire" data-sig="Cin" d="M34 150 L180 150 L180 68 L200 68"/>
+          <path class="wire" data-sig="c1" d="M140 68 L160 68 L160 132 L207 132"/>
+          <path class="wire" data-sig="c2" d="M270 68 L292 68 L292 176 L191 176 L191 156 L207 156"/>
+          <path class="wire" data-sig="S" d="M270 44 L322 44"/>
+          <path class="wire" data-sig="Cout" d="M252 144 L322 144"/>
+        </g>
+        <circle cx="34" cy="40" r="5" fill="#f5b027"/><text x="18" y="45" fill="#ece4d4" font-size="14" font-family="monospace">A</text>
+        <circle cx="34" cy="72" r="5" fill="#f5b027"/><text x="18" y="77" fill="#ece4d4" font-size="14" font-family="monospace">B</text>
+        <circle cx="34" cy="150" r="5" fill="#f5b027"/><text x="8" y="155" fill="#ece4d4" font-size="13" font-family="monospace">Cin</text>
+        <rect class="blk" data-blk="ha1" x="70" y="26" width="70" height="60" rx="8" fill="rgba(245,176,39,.10)" stroke="#f5b027" stroke-width="1.6"/>
+        <text x="105" y="60" fill="#ffd060" font-size="12" font-family="monospace" text-anchor="middle">半加器1</text>
+        <rect class="blk" data-blk="ha2" x="200" y="26" width="70" height="60" rx="8" fill="rgba(245,176,39,.10)" stroke="#f5b027" stroke-width="1.6"/>
+        <text x="235" y="60" fill="#ffd060" font-size="12" font-family="monospace" text-anchor="middle">半加器2</text>
+        <g data-blk="or"><path class="gatebody" d="M207 120 Q227 120 252 144 Q227 168 207 168 Q218 144 207 120 Z" fill="rgba(56,198,217,.10)" stroke="#38c6d9" stroke-width="1.6"/>
+          <text x="214" y="148" fill="#8fe6ff" font-size="11" font-family="monospace">OR</text></g>
+        <circle class="onode" data-sig="S" cx="322" cy="44" r="7" fill="#2a2418" stroke="#f5b027" stroke-width="2"/><text x="332" y="40" fill="#938a76" font-size="12">S</text>
+        <circle class="onode" data-sig="Cout" cx="322" cy="144" r="7" fill="#2a2418" stroke="#38c6d9" stroke-width="2"/><text x="332" y="140" fill="#938a76" font-size="12">Cout</text>
+        <text class="ilbl" data-sig="s1" x="150" y="38" fill="#938a76" font-size="10" font-family="monospace">s1</text>
+        <text class="ilbl" data-sig="c1" x="146" y="82" fill="#938a76" font-size="10" font-family="monospace">c1</text>
+        <text class="ilbl" data-sig="c2" x="276" y="62" fill="#938a76" font-size="10" font-family="monospace">c2</text>
+      </svg>
+      <div class="sum" id="fsum"></div>
+      <div class="cap">全加器 ＝ 兩個半加器 ＋ 一個 OR。S＝A⊕B⊕Cin（總和）；Cout＝進位輸出。中間訊號 s1／c1／c2 會跟著亮。</div>
+    </div>
+
+    <h3>③ 暫存器：打開看裡面的邏輯閘</h3>
+    <p class="lead">前面的邏輯閘算完就沒了，<strong>沒有記憶</strong>。暫存器不一樣——它能<strong>記住一個值</strong>；
+    而它其實也是用邏輯閘做的。下面就是暫存器最基本的樣子（<strong>D 閂鎖</strong><span class="en"> latch</span>）：
+    <strong>CLK＝1 時 Q 跟著 D；把 CLK 打成 0 鎖住後，再怎麼改 D，Q 都不變</strong>——它記住了。</p>
+    <div class="box">
+      <div class="toggles">
+        <div class="toggle"><span class="lb">D</span><button class="bit" id="dBit">0</button></div>
+        <div class="toggle"><span class="lb">CLK</span><button class="bit" id="clkBit">0</button></div>
+      </div>
+      <svg class="circuit" id="ffSvg" style="max-width:540px" viewBox="0 0 380 210" role="img" aria-label="D 閂鎖（暫存器）閘級電路">
+        <g class="wires" stroke-width="2.4" fill="none">
+          <path class="wire" data-sig="D" d="M32 45 L118 42"/>
+          <path class="wire" data-sig="D" d="M40 45 L44 45 L44 107 L58 107"/>
+          <path class="wire" data-sig="Dbar" d="M89 107 L102 107 L102 150 L118 150"/>
+          <path class="wire" data-sig="CLK" d="M32 175 L96 175 L96 60 L118 60"/>
+          <path class="wire" data-sig="CLK" d="M32 175 L118 168"/>
+          <path class="wire" data-sig="S" d="M155 51 L192 51 L192 152 L234 152"/>
+          <path class="wire" data-sig="R" d="M155 159 L210 159 L210 60 L234 60"/>
+          <path class="wire loop" data-sig="Q" d="M281 72 L300 72 L300 112 L222 112 L222 128 L234 128"/>
+          <path class="wire loop" data-sig="Qbar" d="M281 140 L316 140 L316 96 L226 96 L226 84 L234 84"/>
+          <path class="wire" data-sig="Q" d="M281 72 L338 72"/>
+          <path class="wire" data-sig="Qbar" d="M281 140 L338 140"/>
+        </g>
+        <circle cx="32" cy="45" r="5" fill="#f5b027"/><text x="16" y="49" fill="#ece4d4" font-size="14" font-family="monospace">D</text>
+        <circle cx="32" cy="175" r="5" fill="#f5b027"/><text x="10" y="179" fill="#ece4d4" font-size="12" font-family="monospace">CLK</text>
+        <path class="gate" id="gNOT" d="M58 92 L58 122 L83 107 Z" fill="rgba(245,176,39,.1)" stroke="#f5b027" stroke-width="1.6"/><circle cx="86" cy="107" r="3" fill="none" stroke="#f5b027" stroke-width="1.4"/>
+        <path class="gate" id="gAND1" d="M118 34 h20 a17 17 0 0 1 0 34 h-20 Z" fill="rgba(245,176,39,.1)" stroke="#f5b027" stroke-width="1.6"/><text x="122" y="55" fill="#ffd060" font-size="9" font-family="monospace">AND</text>
+        <path class="gate" id="gAND2" d="M118 142 h20 a17 17 0 0 1 0 34 h-20 Z" fill="rgba(245,176,39,.1)" stroke="#f5b027" stroke-width="1.6"/><text x="122" y="163" fill="#ffd060" font-size="9" font-family="monospace">AND</text>
+        <path class="gate" id="gNOR1" d="M232 52 Q252 52 274 72 Q252 92 232 92 Q243 72 232 52 Z" fill="rgba(56,198,217,.1)" stroke="#38c6d9" stroke-width="1.6"/><circle cx="278" cy="72" r="3.5" fill="none" stroke="#38c6d9" stroke-width="1.4"/><text x="238" y="76" fill="#8fe6ff" font-size="9" font-family="monospace">NOR</text>
+        <path class="gate" id="gNOR2" d="M232 120 Q252 120 274 140 Q252 160 232 160 Q243 140 232 120 Z" fill="rgba(56,198,217,.1)" stroke="#38c6d9" stroke-width="1.6"/><circle cx="278" cy="140" r="3.5" fill="none" stroke="#38c6d9" stroke-width="1.4"/><text x="238" y="144" fill="#8fe6ff" font-size="9" font-family="monospace">NOR</text>
+        <circle class="onode" data-sig="Q" cx="338" cy="72" r="7" fill="#2a2418" stroke="#f5b027" stroke-width="2"/><text x="349" y="68" fill="#938a76" font-size="12">Q</text>
+        <circle class="onode" data-sig="Qbar" cx="338" cy="140" r="7" fill="#2a2418" stroke="#38c6d9" stroke-width="2"/><text x="349" y="136" fill="#938a76" font-size="12">Q̄</text>
+        <text class="ilbl" data-sig="Dbar" x="90" y="100" fill="#938a76" font-size="9" font-family="monospace">D̄</text>
+        <text class="ilbl" data-sig="S" x="170" y="46" fill="#938a76" font-size="9" font-family="monospace">S</text>
+        <text class="ilbl" data-sig="R" x="180" y="172" fill="#938a76" font-size="9" font-family="monospace">R</text>
+        <text x="300" y="150" fill="#7a8fa8" font-size="9" font-family="monospace">↑ 兩個 NOR 交叉回授＝記憶迴路</text>
+      </svg>
+      <div class="sum" id="ffnote">CLK＝0（鎖住）：現在改 D 也不會影響 Q。把 CLK 打成 1，Q 才會跟著 D。</div>
+      <div class="cap">關鍵：CLK＝1 時 Q 跟著 D（透明）；CLK＝0 時前面的 AND 閘關起來，靠<strong style="color:var(--amber2)">兩個 NOR 互相接住</strong>（記憶迴路）把 Q 記著——這時改 D 也沒用。這，就是暫存器裡面真正的樣子。</div>
+    </div>
+    <p>把很多個正反器排在一起，就能記住一整串位元 ＝ <strong>多位元暫存器</strong>。CPU 裡到處都是暫存器，用來暫存運算中的數字。
+    有了「記得住」的能力，電路才有記憶——而下一個積分器，就是靠它把總和記住的。</p>
+
+    <h3>④ 積分器（加法器 ＋ 暫存器回授 ＝ 一直累加）</h3>
+    <p class="lead">把加法器的輸出<strong>存回暫存器、再加回去</strong>，它就會一直累加——這就是數位版的
+    <strong>積分器（累加器）</strong>。每一次時脈，就把輸入加進總和。DSP、繪圖、AI 的運算全靠它。</p>
+    <div class="box">
+      <svg class="circuit" id="accSvg" style="max-width:430px" viewBox="0 0 360 150" role="img" aria-label="累加器（積分器）電路">
+        <g stroke-width="2.8" fill="none" stroke="#4a4534">
+          <path id="acW1" d="M60 55 L128 55"/>
+          <path id="acW2" d="M192 55 L240 55"/>
+          <path id="acW3" d="M312 55 L346 55"/>
+          <path id="acFB" d="M312 78 L312 122 L160 122 L160 82"/>
+        </g>
+        <rect x="10" y="38" width="50" height="34" rx="7" fill="rgba(245,176,39,.10)" stroke="#f5b027"/>
+        <text x="35" y="51" text-anchor="middle" fill="#fff" font-size="10">輸入</text>
+        <text id="acInSvg" x="35" y="66" text-anchor="middle" fill="#ffd060" font-size="13" font-family="monospace">+3</text>
+        <rect x="128" y="38" width="64" height="44" rx="8" fill="rgba(245,176,39,.12)" stroke="#f5b027"/>
+        <text x="160" y="54" text-anchor="middle" fill="#fff" font-size="11">加法器</text>
+        <text x="160" y="73" text-anchor="middle" fill="#ffd060" font-size="16" font-family="monospace">＋</text>
+        <rect x="240" y="33" width="72" height="44" rx="8" fill="rgba(87,217,138,.10)" stroke="#57d98a"/>
+        <text x="276" y="49" text-anchor="middle" fill="#fff" font-size="10">暫存器</text>
+        <text id="acSumSvg" x="276" y="70" text-anchor="middle" fill="#8ff0bf" font-size="18" font-family="monospace" font-weight="bold">0</text>
+        <text x="348" y="59" fill="#938a76" font-size="11">輸出</text>
+        <text x="176" y="136" fill="#938a76" font-size="10" font-family="monospace">回授：把總和加回去（一直累加）</text>
+      </svg>
+      <div class="toggles" style="margin-top:14px">
+        <button class="btn" id="accStep">⏱ 時脈一次（加一次）</button>
+        <button class="btn ghost" id="accInBtn">換輸入值</button>
+        <button class="btn ghost" id="accReset">歸零</button>
+      </div>
+      <div class="sum" id="accSeq"></div>
+    </div>
+  </div></section>
+
+  <section id="s3"><div class="wrap">
+    <div class="snum">03</div>
+    <h2>關 4 Layout：擺放與繞線（挑戰：總線長最短）</h2>
+    <p class="lead">看過電路內部後，這一關要把元件<strong>擺到晶片上、再把線接過去</strong>——就是蓋房子的「拉水電管線」。
+    五個元件要互相連線（見右邊連線表）；動腦想想怎麼擺——常互相連的放近一點，把<span class="hl">總線長壓到目標值以下</span>。</p>
+    <div class="box">
+      <div class="plwrap">
+        <div>
+          <div class="gridbox" id="gridbox">
+            <div class="gridbg" id="gridbg"></div>
+            <svg class="wireLayer" id="wireLayer" viewBox="0 0 4 4" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="plmeta">
+            <span class="score" id="score">總線長：<b>—</b></span>
+            <span class="score" style="color:var(--dim)">目標 ≤ <b style="color:var(--cyan)">7</b></span>
+            <button class="btn ghost" id="plreset">重置</button>
+          </div>
+          <div class="cap" id="plcap">把五個元件都拖上格子。</div>
+        </div>
+        <div>
+          <div class="tray" id="tray"></div>
+          <div class="netlist" id="netlist"></div>
+        </div>
+      </div>
+    </div>
+    <p>真實晶片有數十億個元件，這種「擺哪最省線」的問題，是靠 EDA 軟體自動最佳化的——但道理，就跟你剛剛動腦想的一樣。</p>
+  </div></section>
+
+  <section id="s4"><div class="wrap">
+    <div class="snum">04</div>
+    <h2>送廠前把關：電腦幫你抓錯（DRC）</h2>
+    <p class="lead">Layout 排好、送廠前還要檢查。DRC＝設計規則檢查，它不是五關裡的一關，而是送廠前用電腦把整張圖掃過一遍。
+    晶片一次做幾百萬顆，圖錯一個地方就全報廢，所以每條線都要符合工廠規則。先看規則，再到 layout 上把<strong>違規全點出來</strong>：</p>
+    <div class="rulebox">
+      <div class="rt">DRC 五條規則</div>
+      <ul>
+        <li><b>最小線寬</b>：線不能太細（太細會斷）</li>
+        <li><b>最小間距</b>：兩條線不能太近（會互相干擾）</li>
+        <li><b>不可超界</b>：線不能超出晶片可用區（紫色框）</li>
+        <li><b>不可短路</b>：不該相接的線不能碰在一起</li>
+        <li><b>最小長度</b>：線不能太短（斷頭、接不到）</li>
+      </ul>
+    </div>
+    <div class="box">
+      <svg class="drc" id="drc" viewBox="0 0 200 112" role="img" aria-label="DRC 檢查 layout"></svg>
+      <div class="drcbar">
+        <span class="drcstat" id="drcstat">已找出 <b>0</b> 個違規</span>
+        <button class="btn" id="rundrc">我找好了 → 執行 DRC 檢查</button>
+        <button class="btn ghost" id="drcreset">重置</button>
+      </div>
+      <div class="drctip" id="drctip"></div>
+    </div>
+    <p>人用眼睛一定會漏，所以工程師靠 DRC 自動抓；還有 <strong>LVS</strong> 比對「畫的圖」和「原電路」是否一致。這些工具，就是幫工程師省下幾千萬的守門員。</p>
+  </div></section>
+
+  <section style="border-bottom:none"><div class="wrap">
+    <div class="snum">回顧</div>
+    <h2>本課重點</h2>
+    <div class="recap"><ul>
+      <li><span class="k">01</span><span>設計晶片 = 蓋房子的 <strong>5 關</strong>：SPEC → 功能 → RTL → Layout → Chip。</span></li>
+      <li><span class="k">02</span><span><strong>電路內部</strong>（RTL 之後電腦自動組）：邏輯閘 → 半加器 → 全加器 → <strong>暫存器（記憶）</strong> → <strong>積分器（累加器）</strong>，一層層疊出來。</span></li>
+      <li><span class="k">03</span><span><strong>關4 Layout</strong> = 擺放 ＋ 繞線（拉水電管線），目標是總線長最短。</span></li>
+      <li><span class="k">04</span><span>電腦用 <strong>DRC／LVS</strong> 依規則自動抓錯，因為一錯就是幾百萬顆報廢。</span></li>
+    </ul></div>
+    <div class="foot">2026 Playchip 玩創晶片 · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
+  </div></section>
+</div>
+
+<script>
+(function(){
+  var doc=document.documentElement, prog=document.getElementById('prog');
+  window.addEventListener('scroll',function(){ prog.style.width=(doc.scrollTop/((doc.scrollHeight-doc.clientHeight)||1)*100)+'%'; },{passive:true});
+  var NS='http://www.w3.org/2000/svg';
+  function col(v){return getComputedStyle(doc).getPropertyValue(v).trim();}
+
+  /* ---- 01 matching ---- */
+  var PAIRS=[
+    ['SPEC 規格','決定要蓋什麼房子'],['功能設計','要有哪些房間'],['RTL 描述','用鉛筆打草稿'],
+    ['Layout','拉水電管線'],['Chip 晶片','房子蓋好、可以入住']
+  ];
+  var mLeft=document.getElementById('mLeft'), mRight=document.getElementById('mRight'),
+      mcount=document.getElementById('mcount'), mclr=document.getElementById('mclr');
+  var order=[0,1,2,3,4]; for(var i=order.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=order[i];order[i]=order[j];order[j]=t; }
+  var selL=null, matched=0;
+  PAIRS.forEach(function(p,i){ var d=document.createElement('div'); d.className='mitem'; d.innerHTML='<span class="tag">關'+(i+1)+'</span>'+p[0]; d.dataset.i=i;
+    d.addEventListener('click',function(){ if(d.classList.contains('done'))return; selL=i;
+      Array.prototype.forEach.call(mLeft.children,function(x){x.classList.toggle('sel',+x.dataset.i===i);}); }); mLeft.appendChild(d); });
+  order.forEach(function(origIdx){ var d=document.createElement('div'); d.className='mitem'; d.textContent=PAIRS[origIdx][1]; d.dataset.o=origIdx;
+    d.addEventListener('click',function(){ if(d.classList.contains('done')||selL===null)return;
+      if(+d.dataset.o===selL){ d.classList.add('done'); d.classList.remove('sel');
+        var lft=mLeft.querySelector('.mitem[data-i="'+selL+'"]'); lft.classList.add('done'); lft.classList.remove('sel');
+        selL=null; matched++; mcount.textContent='已配對 '+matched+' / 5'; if(matched===5) mclr.classList.add('show');
+      } else { d.classList.add('bad'); setTimeout(function(){d.classList.remove('bad');},350); }
+    }); mRight.appendChild(d); });
+
+  /* ---- 02a half adder ---- */
+  var A=0,B=0, E={ bitA:document.getElementById('bitA'),bitB:document.getElementById('bitB'),
+    wA1:document.getElementById('wA1'),wA2:document.getElementById('wA2'),wB1:document.getElementById('wB1'),wB2:document.getElementById('wB2'),
+    wS:document.getElementById('wS'),wC:document.getElementById('wC'),gX:document.getElementById('gXOR').querySelector('.gatebody'),
+    gA:document.getElementById('gAND').querySelector('.gatebody'),dS:document.getElementById('dS'),dC:document.getElementById('dC'),
+    tS:document.getElementById('tS'),tC:document.getElementById('tC'),sum:document.getElementById('hasum') };
+  var htbody=document.querySelector('#htable tbody');
+  [[0,0],[0,1],[1,0],[1,1]].forEach(function(r){ var tr=document.createElement('tr'); tr.dataset.k=''+r[0]+r[1];
+    tr.innerHTML='<td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+(r[0]^r[1])+'</td><td>'+(r[0]&r[1])+'</td>'; htbody.appendChild(tr); });
+  function wc(on){ return on? col('--amber2'):col('--dimwire'); }
+  function updHA(){ var S=A^B,C=A&B;
+    E.bitA.textContent=A;E.bitA.classList.toggle('one',A===1);E.bitB.textContent=B;E.bitB.classList.toggle('one',B===1);
+    E.wA1.setAttribute('stroke',wc(A));E.wA2.setAttribute('stroke',wc(A));E.wB1.setAttribute('stroke',wc(B));E.wB2.setAttribute('stroke',wc(B));
+    E.wS.setAttribute('stroke',wc(S));E.wC.setAttribute('stroke',wc(C));
+    E.gX.setAttribute('fill',S?'rgba(245,176,39,.3)':'rgba(245,176,39,.12)');E.gA.setAttribute('fill',C?'rgba(56,198,217,.3)':'rgba(56,198,217,.1)');
+    E.dS.setAttribute('fill',S?'rgba(245,176,39,.5)':'#2a2418');E.tS.textContent=S;E.tS.setAttribute('fill',S?'#fff':'#938a76');
+    E.dC.setAttribute('fill',C?'rgba(56,198,217,.5)':'#2a2418');E.tC.textContent=C;E.tC.setAttribute('fill',C?'#fff':'#938a76');
+    E.sum.innerHTML=(A&&B)?'1 + 1 = <b>10</b>（逢二進一 → 就是 2）':A+' + '+B+' = <b>'+(C*2+S)+'</b>';
+    Array.prototype.forEach.call(htbody.children,function(tr){tr.classList.toggle('cur',tr.dataset.k===(''+A+B));}); }
+  E.bitA.addEventListener('click',function(){A^=1;updHA();});E.bitB.addEventListener('click',function(){B^=1;updHA();});updHA();
+
+  /* ---- 02b full adder (circuit) ---- */
+  var fa={A:0,B:0,C:0}, fA=document.getElementById('fA'),fB=document.getElementById('fB'),fCin=document.getElementById('fCin'),
+      fsum=document.getElementById('fsum'), faSvg=document.getElementById('faSvg');
+  function updFA(){
+    var g={}; g.A=fa.A; g.B=fa.B; g.Cin=fa.C; g.s1=g.A^g.B; g.c1=g.A&g.B; g.S=g.s1^g.Cin; g.c2=g.s1&g.Cin; g.Cout=g.c1|g.c2;
+    [[fA,'A'],[fB,'B'],[fCin,'Cin']].forEach(function(x){ x[0].textContent=g[x[1]]; x[0].classList.toggle('one',g[x[1]]===1); });
+    var LIT=col('--amber2'), DIM=col('--dimwire');
+    Array.prototype.forEach.call(faSvg.querySelectorAll('.wire'),function(w){ w.setAttribute('stroke', g[w.dataset.sig]?LIT:DIM); });
+    Array.prototype.forEach.call(faSvg.querySelectorAll('.onode'),function(n){ n.setAttribute('fill', g[n.dataset.sig]? (n.dataset.sig==='Cout'?'rgba(56,198,217,.5)':'rgba(245,176,39,.5)') : '#2a2418'); });
+    Array.prototype.forEach.call(faSvg.querySelectorAll('.ilbl'),function(t){ var v=g[t.dataset.sig]; t.setAttribute('fill', v?'#ffd060':'#938a76'); t.textContent=t.dataset.sig+'='+v; });
+    var ha1=faSvg.querySelector('[data-blk="ha1"]'), ha2=faSvg.querySelector('[data-blk="ha2"]'), orb=faSvg.querySelector('[data-blk="or"] .gatebody');
+    ha1.setAttribute('fill',(g.s1||g.c1)?'rgba(245,176,39,.22)':'rgba(245,176,39,.10)');
+    ha2.setAttribute('fill',(g.S||g.c2)?'rgba(245,176,39,.22)':'rgba(245,176,39,.10)');
+    if(orb) orb.setAttribute('fill', g.Cout?'rgba(56,198,217,.3)':'rgba(56,198,217,.10)');
+    fsum.innerHTML='A+B+Cin = '+g.A+'+'+g.B+'+'+g.Cin+' = <b>'+(g.A+g.B+g.Cin)+'</b>　（二進位 '+g.Cout+''+g.S+'）';
+  }
+  fA.addEventListener('click',function(){fa.A^=1;updFA();});fB.addEventListener('click',function(){fa.B^=1;updFA();});fCin.addEventListener('click',function(){fa.C^=1;updFA();});updFA();
+
+  /* ---- 02(reg) D latch 閘級（暫存器）---- */
+  var rD=0, rCLK=0, rQ=0;
+  var dBit=document.getElementById('dBit'), clkBit=document.getElementById('clkBit'),
+      ffSvg=document.getElementById('ffSvg'), ffnote=document.getElementById('ffnote');
+  function updReg(){
+    if(rCLK===1) rQ=rD;                       // CLK=1 透明：Q 跟著 D
+    var Dbar=rD^1, S=rD&rCLK, R=Dbar&rCLK, Qbar=rQ^1;
+    var g={D:rD,CLK:rCLK,Dbar:Dbar,S:S,R:R,Q:rQ,Qbar:Qbar};
+    dBit.textContent=rD; dBit.classList.toggle('one',rD===1);
+    clkBit.textContent=rCLK; clkBit.classList.toggle('one',rCLK===1);
+    var LIT=col('--amber2'), DIM=col('--dimwire');
+    Array.prototype.forEach.call(ffSvg.querySelectorAll('.wire'),function(w){ w.setAttribute('stroke', g[w.dataset.sig]?LIT:DIM); });
+    Array.prototype.forEach.call(ffSvg.querySelectorAll('.onode'),function(n){ n.setAttribute('fill', g[n.dataset.sig]? (n.dataset.sig==='Qbar'?'rgba(56,198,217,.5)':'rgba(245,176,39,.5)') : '#2a2418'); });
+    Array.prototype.forEach.call(ffSvg.querySelectorAll('.ilbl'),function(t){ var v=g[t.dataset.sig]; t.setAttribute('fill', v?'#ffd060':'#938a76'); var nm=({Dbar:'D̄',S:'S',R:'R'})[t.dataset.sig]||t.dataset.sig; t.textContent=nm+'='+v; });
+    function gt(id,on,hot,dim){ var e=ffSvg.querySelector('#'+id); if(e) e.setAttribute('fill', on?hot:dim); }
+    gt('gNOT',Dbar,'rgba(245,176,39,.28)','rgba(245,176,39,.1)');
+    gt('gAND1',S,'rgba(245,176,39,.28)','rgba(245,176,39,.1)');
+    gt('gAND2',R,'rgba(245,176,39,.28)','rgba(245,176,39,.1)');
+    gt('gNOR1',rQ,'rgba(56,198,217,.3)','rgba(56,198,217,.1)');
+    gt('gNOR2',Qbar,'rgba(56,198,217,.3)','rgba(56,198,217,.1)');
+    ffnote.innerHTML = rCLK===1 ? ('CLK＝1（透明）：Q 跟著 D → Q＝<b>'+rQ+'</b>。') : ('CLK＝0（鎖住）：靠兩個 NOR 互相接住、記住 Q＝<b>'+rQ+'</b>。現在改 D 也不會變。');
+  }
+  dBit.addEventListener('click',function(){ rD^=1; updReg(); });
+  clkBit.addEventListener('click',function(){ rCLK^=1; updReg(); });
+  updReg();
+
+  /* ---- 02c accumulator (circuit + feedback pulse) ---- */
+  var accSum=0, accIns=[3,5,10,1], accIdx=0, seq=[];
+  var acSumSvg=document.getElementById('acSumSvg'), acInSvg=document.getElementById('acInSvg'), accSeqEl=document.getElementById('accSeq');
+  var accWires=['acW1','acW2','acW3','acFB'].map(function(id){return document.getElementById(id);});
+  function drawAcc(){ acInSvg.textContent='+'+accIns[accIdx]; acSumSvg.textContent=accSum; accSeqEl.innerHTML=seq.length?('累加序列：'+seq.join(' → ')):''; }
+  function pulse(){ var LIT=col('--amber2'); accWires.forEach(function(w){ if(w)w.setAttribute('stroke',LIT); }); setTimeout(function(){ accWires.forEach(function(w){ if(w)w.setAttribute('stroke','#4a4534'); }); },430); }
+  document.getElementById('accStep').addEventListener('click',function(){ accSum+=accIns[accIdx]; seq.push(accSum); if(seq.length>8)seq.shift(); pulse(); drawAcc(); });
+  document.getElementById('accInBtn').addEventListener('click',function(){ accIdx=(accIdx+1)%accIns.length; drawAcc(); });
+  document.getElementById('accReset').addEventListener('click',function(){ accSum=0; seq=[]; drawAcc(); });
+  drawAcc();
+
+  /* ---- 03 placement (harder: 5 comp, hub) ---- */
+  var PARTS=['CPU','記憶體','快取','I/O','電源'];
+  var NETS=[[0,1],[0,2],[0,3],[1,2],[3,4]]; // CPU(0) 樞紐連 記憶體/快取/I/O；記憶體-快取；I/O-電源
+  var TARGET=7;
+  var gridbox=document.getElementById('gridbox'),gridbg=document.getElementById('gridbg'),wireLayer=document.getElementById('wireLayer'),
+      tray=document.getElementById('tray'),scoreEl=document.getElementById('score'),plcap=document.getElementById('plcap'),netlistEl=document.getElementById('netlist');
+  for(var i=0;i<16;i++) gridbg.appendChild(document.createElement('i'));
+  netlistEl.innerHTML='<b style="color:var(--amber)">需連線：</b><br>'+NETS.map(function(n){return PARTS[n[0]]+' — '+PARTS[n[1]];}).join('<br>');
+  var cellOf={}, occupied={}, chips=[];
+  PARTS.forEach(function(p,idx){ var slot=document.createElement('div'); slot.className='slot'; tray.appendChild(slot);
+    var c=document.createElement('div'); c.className='chip2'; c.textContent=p; c.dataset.idx=idx; c._home=slot; chips.push(c); toSlot(c,slot); drag(c); });
+  function toSlot(c,slot){ slot.appendChild(c); c.style.left='6%'; c.style.top='8%'; c.style.width='88%'; c.style.height='84%'; }
+  function drag(c){ var on=false;
+    c.addEventListener('pointerdown',function(e){ on=true; c.classList.add('drag'); try{c.setPointerCapture(e.pointerId);}catch(_){}
+      gridbox.appendChild(c); c.style.width='22%'; c.style.height='22%'; var b=gridbox.getBoundingClientRect(); mv(e.clientX-b.left,e.clientY-b.top); e.preventDefault(); });
+    c.addEventListener('pointermove',function(e){ if(!on)return; var b=gridbox.getBoundingClientRect(); mv(e.clientX-b.left,e.clientY-b.top); });
+    c.addEventListener('pointerup',function(e){ if(!on)return; on=false; c.classList.remove('drag'); var b=gridbox.getBoundingClientRect(); drop(c,e.clientX-b.left,e.clientY-b.top); });
+    function mv(x,y){ var w=gridbox.clientWidth,h=gridbox.clientHeight,cw=w*.22,ch=h*.22; x=Math.max(cw/2,Math.min(w-cw/2,x)); y=Math.max(ch/2,Math.min(h-ch/2,y)); c.style.left=(x-cw/2)+'px'; c.style.top=(y-ch/2)+'px'; }
+  }
+  function drop(c,x,y){ var w=gridbox.clientWidth,h=gridbox.clientHeight, ci=Math.max(0,Math.min(3,Math.floor(y/(h/4))))*4+Math.max(0,Math.min(3,Math.floor(x/(w/4)))); var idx=+c.dataset.idx;
+    if(cellOf[idx]!==undefined){ delete occupied[cellOf[idx]]; delete cellOf[idx]; }
+    if(occupied[ci]!==undefined){ toSlot(c,c._home); upd(); return; }
+    var cw=w*.22,ch=h*.22, coln=ci%4,rown=Math.floor(ci/4); c.style.left=((coln+.5)*(w/4)-cw/2)+'px'; c.style.top=((rown+.5)*(h/4)-ch/2)+'px';
+    cellOf[idx]=ci; occupied[ci]=idx; upd(); }
+  function upd(){ wireLayer.innerHTML=''; var total=0, all=Object.keys(cellOf).length===5;
+    NETS.forEach(function(n){ var a=cellOf[n[0]],b=cellOf[n[1]]; if(a===undefined||b===undefined)return;
+      var ax=a%4+.5,ay=Math.floor(a/4)+.5,bx=b%4+.5,by=Math.floor(b/4)+.5; total+=Math.abs(ax-bx)+Math.abs(ay-by);
+      var ln=document.createElementNS(NS,'line'); ln.setAttribute('x1',ax);ln.setAttribute('y1',ay);ln.setAttribute('x2',bx);ln.setAttribute('y2',by);
+      ln.setAttribute('stroke',col('--cyan'));ln.setAttribute('stroke-width',.055);ln.setAttribute('opacity',.9); wireLayer.appendChild(ln); });
+    if(Object.keys(cellOf).length<2){ scoreEl.innerHTML='總線長：<b>—</b>'; scoreEl.classList.remove('good'); }
+    else{ scoreEl.innerHTML='總線長：<b>'+total+'</b> 格'; scoreEl.classList.toggle('good',all&&total<=TARGET);
+      plcap.textContent= all ? (total<=TARGET?('達標！總線長 '+total+' ≤ '+TARGET+'，很棒的擺法。'):('目前 '+total+' 格，還沒到目標。把 CPU 放中間、相連的靠近試試。')) : (Object.keys(cellOf).length+' / 5 已放上格子。'); }
+  }
+  document.getElementById('plreset').addEventListener('click',function(){ cellOf={};occupied={};wireLayer.innerHTML=''; chips.forEach(function(c){toSlot(c,c._home);}); scoreEl.innerHTML='總線長：<b>—</b>'; scoreEl.classList.remove('good'); plcap.textContent='把五個元件都拖上格子。'; });
+
+  /* ---- 04 DRC (10 violations, rules) ---- */
+  var drc=document.getElementById('drc'), drcstat=document.getElementById('drcstat'), drctip=document.getElementById('drctip');
+  var V=[]; // 違規清單
+  function ln(x1,y1,x2,y2,sw,c){ var e=document.createElementNS(NS,'line'); e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);e.setAttribute('stroke',c||col('--cyan'));e.setAttribute('stroke-width',sw); drc.appendChild(e); return e; }
+  function hotspot(cx,cy,rule){ var h=document.createElementNS(NS,'circle'); h.setAttribute('cx',cx);h.setAttribute('cy',cy);h.setAttribute('r',6);h.setAttribute('fill','transparent');h.setAttribute('class','hot'); drc.appendChild(h); V.push({cx:cx,cy:cy,rule:rule,found:false,el:h}); return h; }
+  function build(){
+    drc.innerHTML=''; V=[];
+    function jdot(cx,cy){ var e=document.createElementNS(NS,'circle'); e.setAttribute('cx',cx);e.setAttribute('cy',cy);e.setAttribute('r',2.2);e.setAttribute('fill',col('--cyan')); drc.appendChild(e); }
+    var bd=document.createElementNS(NS,'rect'); bd.setAttribute('x',8);bd.setAttribute('y',8);bd.setAttribute('width',184);bd.setAttribute('height',96);bd.setAttribute('fill','none');bd.setAttribute('stroke',col('--purple'));bd.setAttribute('stroke-width',.8);bd.setAttribute('stroke-dasharray','3 2'); drc.appendChild(bd);
+    // 背景正常線：長線＋交叉網格（不同層的交叉不算短路），把違規混進去、不好一眼看出
+    ln(14,16,186,16,2.2); ln(14,102,186,102,2.2); ln(40,44,186,44,2.2); ln(14,68,160,68,2.2);
+    ln(30,16,30,102,2.2); ln(96,16,96,102,2.2); ln(168,16,168,102,2.2);
+    // 違規（10；每種規則兩個，一橫一直／不同形狀，都拉長混在網格裡）
+    ln(14,28,186,28,0.7); hotspot(100,28,'最小線寬：這條線太細（太細會斷）');                 // 太細·長橫
+    ln(126,16,126,102,0.7); hotspot(126,58,'最小線寬：這條直線太細');                          // 太細·長直
+    ln(24,56,180,56,2.2); ln(24,59,180,59,2.2); hotspot(102,57,'最小間距：這兩條長線太近');    // 太近·長橫
+    ln(78,16,78,100,2.2); ln(81,16,81,100,2.2); hotspot(79,55,'最小間距：這兩條直線太近');      // 太近·長直
+    ln(2,86,80,86,2.2); hotspot(6,86,'不可超界：線超出左邊界（紫框外）');                       // 超界·左
+    ln(150,2,150,40,2.2); hotspot(150,6,'不可超界：線超出上邊界');                              // 超界·上
+    ln(100,80,136,80,2.2); ln(110,66,110,94,2.2); jdot(110,80); hotspot(110,80,'不可短路：兩條線交叉相接'); // 短路·十字
+    ln(124,88,178,88,2.2); ln(148,80,148,96,2.2); jdot(148,88); hotspot(148,88,'不可短路：接點意外相接'); // 短路·T形
+    ln(44,36,54,36,2.2); hotspot(49,36,'最小長度：這條線太短（斷頭、接不到）');                // 太短·橫
+    ln(172,60,172,70,2.2); hotspot(172,65,'最小長度：這條線太短');                             // 太短·直
+    bindV();
+  }
+  function mark(v,manual){ if(v.found)return; v.found=true; foundN++;
+    var m=document.createElementNS(NS,'circle'); m.setAttribute('cx',v.cx);m.setAttribute('cy',v.cy);m.setAttribute('r',6);m.setAttribute('class','found'); if(!manual)m.setAttribute('stroke',col('--amber2')); drc.appendChild(m);
+    drcstat.innerHTML='已找出 <b>'+foundN+'</b> 個違規';
+    if(manual){ drctip.style.color=col('--amber2'); drctip.textContent='✓ 抓到了：'+v.rule; } }
+  var foundN=0;
+  function bindV(){ V.forEach(function(v){ v.el.addEventListener('click',function(ev){ ev.stopPropagation(); mark(v,true); }); }); }
+  build();
+  drc.addEventListener('click',function(e){ if(e.target===drc && foundN<10){ drctip.style.color=col('--dim'); drctip.textContent='這裡沒問題，再找找看。'; } });
+  document.getElementById('rundrc').addEventListener('click',function(){
+    var manualCount=foundN; V.forEach(function(v){ mark(v,false); }); var revealed=foundN-manualCount;
+    drctip.style.color=col('--amber2');
+    drctip.innerHTML='你自己找到 <b style="color:#fff">'+manualCount+'</b> 個；DRC 又抓出 <b style="color:'+col('--red')+'">'+revealed+'</b> 個你漏掉的 —— 總共 <b style="color:#fff">'+V.length+'</b> 個違規。人眼會漏，電腦不會。';
+  });
+  document.getElementById('drcreset').addEventListener('click',function(){ foundN=0; build(); drcstat.innerHTML='已找出 <b>0</b> 個違規'; drctip.textContent=''; });
+})();
+</script>
+</body>
+</html>
