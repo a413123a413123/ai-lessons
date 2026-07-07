@@ -49,6 +49,13 @@
   .dom .en{display:block; margin-top:3px}
   .dom .ex{font-size:14.5px; color:#a9bccf; line-height:1.75; max-height:0; overflow:hidden; opacity:0; transition:.28s}
   .dom.open .ex{max-height:220px; opacity:1; margin-top:13px; padding-top:13px; border-top:1px solid var(--line2)}
+    /* featured demo video */
+    .vbox{margin-top:24px; background:var(--panel); border:1px solid var(--line2); border-radius:14px; padding:16px 16px 14px}
+    .vhd{font-size:15px; color:#cfe0ef; line-height:1.6; margin-bottom:12px}
+    .vhd .vtag{color:var(--cyan); font-weight:700; margin-right:8px}
+    .vframe{position:relative; width:100%; height:0; padding-bottom:56.25%; border-radius:10px; overflow:hidden; border:1px solid var(--line2)}
+    .vframe iframe{position:absolute; top:0; left:0; width:100%; height:100%; border:0}
+    .vcap{margin-top:11px; font-size:13px; color:var(--dim); line-height:1.7}
   .axis{display:flex; align-items:center; gap:14px; font-size:14px; color:var(--dim); font-family:var(--mono); margin-top:8px}
   .axis b{color:var(--text); font-weight:600} .axis .ln{flex:1; height:1px; background:linear-gradient(90deg,var(--cyan),var(--purple))}
 
@@ -154,6 +161,11 @@
     </div>
     <div class="axis"><b>理解 / 判別</b><span class="ln"></span><b>創造 / 生成</b></div>
     <p style="margin-top:16px;color:var(--dim);font-size:14.5px">前三者著重「理解與判斷」現有資料；生成式 AI 則著重「產生」新內容。四者共用同一套底層原理——接下來的兩節，就是這套原理。</p>
+    <div class="vbox">
+      <div class="vhd"><span class="vtag">▶ 電腦視覺實際運作</span>即時物件偵測：街上的車與行人，被 AI 逐一框出、編號、持續追蹤。</div>
+      <div class="vframe"><iframe src="https://www.youtube-nocookie.com/embed/hHyHmOtmEgs?rel=0" title="Object Detection and Tracking with Ultralytics YOLOv8" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>
+      <div class="vcap">這正是自駕車、手機相機、工廠檢測背後在做的事——把「畫面」變成一格一格可判斷的框。影片：Ultralytics（YOLO 官方）。課堂播前 30–40 秒即可。</div>
+    </div>
   </div></section>
 
   <section id="s2"><div class="wrap">
