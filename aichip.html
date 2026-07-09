@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>為什麼 AI 要用專門的晶片 · 互動教材 · 陳泓光</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#070a10; --bg2:#0f141d; --panel:rgba(255,255,255,.03);
+    --cyan:#31c9e6; --cyan2:#83edff; --amber:#ff9d3c; --amber2:#ffca7a;
+    --hot:#ff5a5a; --green:#57d98a; --purple:#9b8cff; --dimwire:#33404f;
+    --text:#dbe6f1; --ink:#ffffff; --dim:#7d8da5;
+    --line:rgba(49,201,230,.20); --line2:rgba(255,255,255,.07);
+    --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    --wrap:820px;
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .page{font-family:var(--sans); color:var(--text); font-size:17px; line-height:1.85; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(1100px 560px at 22% -8%,rgba(49,201,230,.10),transparent 60%),
+      radial-gradient(1000px 520px at 88% 4%,rgba(255,157,60,.08),transparent 60%),
+      linear-gradient(rgba(120,160,200,.028) 1px,transparent 1px) 0 0/100% 42px,
+      linear-gradient(90deg,rgba(120,160,200,.028) 1px,transparent 1px) 0 0/42px 100%, var(--bg);}
+  .wrap{max-width:var(--wrap); margin:0 auto; padding:0 22px}
+  h1,h2,h3{color:var(--ink); line-height:1.32; text-wrap:balance; margin:0}
+  .prog{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--cyan),var(--amber)); width:0%; z-index:50; box-shadow:0 0 10px var(--cyan)}
+  .hero{padding:76px 0 50px; border-bottom:1px solid var(--line2)}
+  .hero .wrap{max-width:880px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px}
+  .hero h1{font-size:42px; font-weight:800; color:#fff; letter-spacing:-.01em; text-shadow:0 0 26px rgba(49,201,230,.25)}
+  .hero .sub{color:#aebccd; font-size:16.5px; margin:18px 0 0; line-height:1.75; max-width:64ch}
+  .toc{display:flex; flex-wrap:wrap; margin-top:30px; border:1px solid var(--line2); border-radius:12px; overflow:hidden}
+  .toc a{flex:1; min-width:150px; padding:14px 16px; color:var(--text); text-decoration:none; border-right:1px solid var(--line2); transition:.15s; font-size:14.5px}
+  .toc a:last-child{border-right:none} .toc a:hover{background:rgba(49,201,230,.07); color:#fff}
+  .toc a .n{font-family:var(--mono); font-size:11px; color:var(--amber); display:block; margin-bottom:3px}
+  section{padding:54px 0; border-bottom:1px solid var(--line2)}
+  .snum{font-family:var(--mono); font-size:13px; color:var(--amber); letter-spacing:.08em}
+  h2{font-size:27px; font-weight:800; margin:8px 0 8px; color:#fff}
+  h3{font-size:19px; color:#fff; margin:24px 0 6px}
+  .lead{font-size:17px; color:#b8c5d4; margin:6px 0 22px; max-width:64ch}
+  p{margin:15px 0; max-width:64ch} strong{color:#fff; font-weight:700} .hl{color:var(--cyan2); font-weight:700} .hlw{color:var(--amber2);font-weight:700}
+  .en{font-family:var(--mono); color:var(--dim); font-size:.82em}
+  .box{background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:22px; margin:20px 0}
+  .cap{font-size:14px; color:var(--dim); margin-top:14px}
+  .btn{font-family:var(--sans); font-size:14.5px; background:rgba(49,201,230,.12); color:var(--cyan2); border:1px solid var(--line); padding:10px 18px; border-radius:9px; cursor:pointer; transition:.15s}
+  .btn:hover{background:rgba(49,201,230,.22)} .btn:disabled{opacity:.35; cursor:default}
+  .btn.amb{background:rgba(255,157,60,.14); color:var(--amber2); border-color:rgba(255,157,60,.3)} .btn.amb:hover{background:rgba(255,157,60,.24)}
+  .btn.ghost{background:transparent; color:var(--dim)}
+  .btnrow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px}
+
+  /* 01 neuron */
+  .neuron{display:flex; flex-direction:column; gap:14px; align-items:center}
+  .macrow{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .macchip{display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.3); border:1px solid var(--line2); border-radius:10px; padding:10px 12px; font-family:var(--mono); font-size:15px}
+  .macchip .xb{width:34px; height:34px; border-radius:7px; border:1px solid var(--line); background:rgba(0,0,0,.3); color:var(--cyan2); font-weight:700; cursor:pointer; font-size:16px}
+  .macchip .xb.one{background:rgba(49,201,230,.22); color:#fff; border-color:var(--cyan)}
+  .macchip .w{color:var(--amber2)} .macchip .eq{color:var(--dim)} .macchip .pr{color:#fff; font-weight:700; min-width:16px; text-align:center}
+  .macchip.lit{border-color:var(--amber); box-shadow:0 0 14px rgba(255,157,60,.25)}
+  .nsum{font-family:var(--mono); font-size:18px; color:var(--text)} .nsum b{color:var(--cyan2); font-size:22px}
+  .nfire{font-size:17px; font-weight:800; padding:8px 18px; border-radius:999px; border:1px solid var(--line2)}
+  .nfire.on{color:#0b140a; background:var(--green); border-color:var(--green)} .nfire.off{color:var(--dim)}
+
+  /* 02 race grids */
+  .race{display:grid; grid-template-columns:1fr 1fr; gap:16px} @media(max-width:600px){.race{grid-template-columns:1fr}}
+  .gcard{border:1px solid var(--line2); border-radius:14px; padding:16px; background:rgba(0,0,0,.18)}
+  .gcard.cpu{border-top:3px solid var(--dim)} .gcard.acc{border-top:3px solid var(--amber)}
+  .gtitle{font-size:15px; font-weight:800; color:#fff} .gsub{font-size:12.5px; color:var(--dim); font-family:var(--mono); margin-top:2px; min-height:16px}
+  .g4{display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin:14px 0 10px; aspect-ratio:1}
+  .cell{border-radius:6px; background:rgba(255,255,255,.04); border:1px solid var(--line2); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:13px; color:var(--dim); transition:.12s}
+  .cell.lit{color:#fff}
+  .cpu .cell.lit{background:rgba(120,140,160,.28); border-color:#8494a6}
+  .acc .cell.lit{background:rgba(255,157,60,.24); border-color:var(--amber)}
+  .cyc{font-family:var(--mono); font-size:14px; color:var(--text)} .cyc b{font-size:20px; color:var(--amber2)}
+  .cyc.cpu b{color:#c3ced9}
+  .racesum{margin-top:16px; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:rgba(49,201,230,.06); font-size:15.5px}
+
+  /* 03 energy */
+  .ebars{display:flex; flex-direction:column; gap:12px; margin:6px 0 6px}
+  .ebar{display:grid; grid-template-columns:96px 1fr; align-items:center; gap:12px}
+  .ebar .el{font-size:14px; color:var(--text)}
+  .etrack{height:26px; background:rgba(255,255,255,.05); border-radius:7px; overflow:hidden; border:1px solid var(--line2)}
+  .efill{height:100%; width:0; border-radius:7px; transition:width .4s}
+  .efill.g{background:linear-gradient(90deg,#ff7a3c,var(--hot))} .efill.s{background:linear-gradient(90deg,var(--cyan),var(--green))}
+  .slider{width:100%; margin:8px 0} input[type=range]{width:100%; accent-color:var(--amber)}
+  .elabels{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11.5px; color:var(--dim); margin-top:-2px}
+  .eout{margin-top:12px; font-size:15.5px} .eout .heat{font-size:20px; letter-spacing:2px}
+
+  /* 04 datapath */
+  .dp{position:relative; height:150px; border:1px solid var(--line2); border-radius:12px; background:rgba(0,0,0,.22); overflow:hidden; margin:6px 0}
+  .dpbox{position:absolute; top:50%; transform:translateY(-50%); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12.5px; font-family:var(--mono); text-align:center; line-height:1.25}
+  .dpmem{width:88px; height:64px; background:rgba(49,201,230,.14); border:1px solid var(--cyan); color:var(--cyan2); transition:left .5s}
+  .dpcmp{right:14px; width:88px; height:88px; background:rgba(255,157,60,.14); border:1px solid var(--amber); color:var(--amber2)}
+  .dot{position:absolute; top:50%; width:11px; height:11px; border-radius:50%; background:var(--cyan2); box-shadow:0 0 10px var(--cyan); transform:translateY(-50%); left:0; opacity:0}
+  .dpout{font-size:15.5px; margin-top:12px; min-height:22px}
+  .pill{display:inline-block; font-family:var(--mono); font-size:12px; padding:2px 9px; border-radius:999px; border:1px solid var(--line2); color:var(--dim)}
+  .pill.slow{color:var(--hot); border-color:rgba(255,90,90,.4)} .pill.fast{color:var(--green); border-color:rgba(87,217,138,.4)}
+
+  .recap{background:var(--bg2); border:1px solid var(--line); border-radius:18px; padding:24px; margin:20px 0}
+  .recap ul{margin:0; padding-left:0; list-style:none; display:grid; gap:12px}
+  .recap li{display:flex; gap:12px; font-size:16px} .recap li .k{color:var(--amber); font-weight:800; font-family:var(--mono); flex:none}
+  .maplink{color:var(--cyan2); font-weight:700}
+  .foot{color:var(--dim); font-size:13px; text-align:center; padding:30px 0 52px; font-family:var(--mono)}
+  @media(max-width:520px){ .hero h1{font-size:31px} h2{font-size:23px} .page{font-size:16px} }
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<div class="prog" id="prog"></div>
+<div class="page">
+  <header class="hero"><div class="wrap">
+    <div class="eyebrow">半導體 × AI · 演算法為什麼需要專用晶片</div>
+    <h1>為什麼 AI 要用「專門的」晶片？</h1>
+    <div class="sub">AI 每一次辨識、每一句回答，背後都是幾百萬次「乘完再加」。這一課從一個神經元出發，看懂
+    AI 加速器為什麼快、為什麼要省電、又為什麼要把記憶體疊起來——這些，正是設計 AI 晶片的核心課題。</div>
+    <nav class="toc">
+      <a href="#s1"><span class="n">01</span>AI 在算什麼</a>
+      <a href="#s2"><span class="n">02</span>CPU vs AI 加速器</a>
+      <a href="#s3"><span class="n">03</span>為什麼要省電</a>
+      <a href="#s4"><span class="n">04</span>餵飽它：記憶體牆</a>
+    </nav>
+  </div></header>
+
+  <section id="s1"><div class="wrap">
+    <div class="snum">01</div>
+    <h2>AI 在算什麼：一個神經元 ＝ 乘完再加</h2>
+    <p class="lead">神經網路由很多「神經元」堆成，而每個神經元做的事只有一件：把每個輸入<strong>乘上一個權重</strong>，
+    再<strong>全部加起來</strong>，看夠不夠大，就決定要不要「亮」。切切看下面三個輸入——</p>
+    <div class="box">
+      <div class="neuron">
+        <div class="macrow" id="macrow"></div>
+        <div class="nsum" id="nsum"></div>
+        <div class="nfire" id="nfire"></div>
+      </div>
+      <div class="btnrow" style="justify-content:center">
+        <button class="btn ghost" id="nreset">重設輸入</button>
+      </div>
+      <div class="cap">這個「乘完再加」的動作，英文叫 <span class="en">MAC（Multiply-Accumulate）</span>，是 AI 最基本、最常做的運算。
+      這裡只有 3 次；但辨識<strong>一張圖</strong>、生成 ChatGPT <strong>一個字</strong>，背後是<span class="hlw">幾百萬到幾十億次</span>這種乘加。</div>
+    </div>
+    <p>所以 AI 難的不是「單一步驟很複雜」，而是<strong>要做的次數多到嚇人</strong>。接下來的問題就變成：這麼多乘加，晶片要怎麼算才快？</p>
+  </div></section>
+
+  <section id="s2"><div class="wrap">
+    <div class="snum">02</div>
+    <h2>CPU vs AI 加速器：一次一格 vs 一次一整排</h2>
+    <p class="lead">把「一次運算」想成填滿一張 <strong>4×4 的格子</strong>，每一格都要算一次乘加。
+    左邊是<strong>一般晶片（CPU）</strong>，一次只能算一格；右邊是 <strong>AI 加速器</strong>，一整排乘加單元同時開工。
+    各自點點看，比比看誰花的「拍數」少。</p>
+    <div class="box">
+      <div class="race">
+        <div class="gcard cpu">
+          <div class="gtitle">一般晶片 CPU</div>
+          <div class="gsub">一次算一格</div>
+          <div class="g4" id="cpuGrid"></div>
+          <div class="cyc cpu">時脈：<b id="cpuCyc">0</b> 拍</div>
+          <div class="btnrow">
+            <button class="btn" id="cpuStep">算下一格</button>
+            <button class="btn ghost" id="cpuAuto">自動跑完</button>
+          </div>
+        </div>
+        <div class="gcard acc">
+          <div class="gtitle">AI 加速器</div>
+          <div class="gsub">一次算一整排（4 格同時）</div>
+          <div class="g4" id="accGrid"></div>
+          <div class="cyc">時脈：<b id="accCyc">0</b> 拍</div>
+          <div class="btnrow">
+            <button class="btn amb" id="accStep">算下一排</button>
+            <button class="btn ghost" id="accAuto">自動跑完</button>
+          </div>
+        </div>
+      </div>
+      <div class="racesum" id="racesum">一般晶片要 <b style="color:#fff">16</b> 拍才算完這一張；AI 加速器只要 <b style="color:var(--amber2)">4</b> 拍。</div>
+      <div class="btnrow"><button class="btn ghost" id="raceReset">重置兩邊</button></div>
+      <div class="cap">祕密就這麼簡單：<strong>把超多乘加單元排成一大片、同時算</strong>，這就是「AI 加速器設計」在做的事。
+      格子越大差距越大——真實一次運算是<span class="hlw">幾百萬格</span>，CPU 要幾百萬拍，加速器一次一整排掃過去。</div>
+    </div>
+  </div></section>
+
+  <section id="s3"><div class="wrap">
+    <div class="snum">03</div>
+    <h2>為什麼要省電：每一次乘加都要花電</h2>
+    <p class="lead">算得快還不夠。<strong>每做一次乘加，都要花掉一點點電，還會發熱</strong>。一般晶片什麼都能做，
+    做這件事比較浪費；專用晶片只為這種運算量身打造，<strong>同樣一次運算更省電</strong>。差距看起來很小，但乘上幾十億次——</p>
+    <div class="box">
+      <h3 style="margin-top:4px">① 每一次運算的耗電（示意）</h3>
+      <div class="ebars">
+        <div class="ebar"><span class="el">一般晶片</span><div class="etrack"><div class="efill g" id="perG" style="width:100%"></div></div></div>
+        <div class="ebar"><span class="el">專用晶片</span><div class="etrack"><div class="efill s" id="perS" style="width:17%"></div></div></div>
+      </div>
+      <div class="cap" style="margin-top:6px">同一次乘加，一般晶片大約要花專用晶片 <span class="hlw">6 倍</span>的電。</div>
+
+      <h3>② 乘上運算量，差距會累積</h3>
+      <input class="slider" type="range" id="eLevel" min="0" max="3" step="1" value="1">
+      <div class="elabels"><span>一千次</span><span>一百萬次</span><span>十億次</span><span>一兆次</span></div>
+      <div class="eout" id="eout"></div>
+      <div class="cap">運算量越大，省下來的電越可觀，晶片也越不會過熱——這就是為什麼會有
+      「<strong>低功耗／超低功耗電路設計</strong>」這個題目。手機、穿戴裝置能不能塞進 AI，關鍵就在這裡。</div>
+    </div>
+  </div></section>
+
+  <section id="s4"><div class="wrap">
+    <div class="snum">04</div>
+    <h2>餵飽它：記憶體牆與 3D 封裝</h2>
+    <p class="lead">運算單元再快，也要有人<strong>把資料（權重、輸入）餵給它</strong>。如果記憶體離得遠，資料要跑很遠才到，
+    <strong>又慢又耗電</strong>——工程師常說，搬資料比計算還花電。解法：把記憶體<strong>疊到運算晶片旁邊、甚至上面</strong>。</p>
+    <div class="box">
+      <div class="dp" id="dp">
+        <div class="dpbox dpmem" id="dpMem">記憶體<br>Memory</div>
+        <div class="dpbox dpcmp">運算<br>單元</div>
+        <div class="dot" id="d0"></div><div class="dot" id="d1"></div><div class="dot" id="d2"></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="dpSend">送一批資料</button>
+        <button class="btn amb" id="dpMode">切換：3D 封裝（把記憶體疊上來）</button>
+      </div>
+      <div class="dpout" id="dpout">目前：<span class="pill slow">記憶體在遠處</span>　資料要跑很長一段路。</div>
+      <div class="cap">把記憶體疊上來、拉近距離，資料一下就到——這就是「<strong>異質整合與 3D 封裝</strong>」和 HBM 高頻寬記憶體在做的事。
+      AI 晶片之所以要這樣蓋，就是為了不讓運算單元「餓著等資料」。</div>
+    </div>
+  </div></section>
+
+  <section style="border-bottom:none"><div class="wrap">
+    <div class="snum">回顧</div>
+    <h2>一句話：AI 算得越兇，晶片就得為它量身打造</h2>
+    <div class="recap"><ul>
+      <li><span class="k">01</span><span>AI 的核心運算就是<strong>乘完再加（MAC）</strong>，難在<strong>次數多到幾十億</strong>。</span></li>
+      <li><span class="k">02</span><span>把乘加單元<strong>排成一大片、同時算</strong> ＝ <span class="maplink">AI 加速器設計</span>。</span></li>
+      <li><span class="k">03</span><span>算這麼多要<strong>省電、少發熱</strong> ＝ <span class="maplink">低功耗／超低功耗電路設計</span>。</span></li>
+      <li><span class="k">04</span><span>資料要<strong>餵得快</strong>，把記憶體疊上來 ＝ <span class="maplink">異質整合與 3D 封裝</span>。</span></li>
+    </ul></div>
+    <p>所以那些聽起來很硬的半導體題目，其實都在回答同一個問題：<strong>怎麼把 AI 這種「又多又重」的運算，算得又快又省電。</strong>
+    這，就是 AI 和晶片接在一起的地方。</p>
+    <div class="foot">2026 Playchip 玩創晶片 · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
+  </div></section>
+</div>
+
+<script>
+(function(){
+  var doc=document.documentElement, prog=document.getElementById('prog');
+  window.addEventListener('scroll',function(){ prog.style.width=(doc.scrollTop/((doc.scrollHeight-doc.clientHeight)||1)*100)+'%'; },{passive:true});
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- 01 neuron (MAC) ---- */
+  var W=[3,1,2], TH=3, nb=[1,0,1];
+  var macrow=document.getElementById('macrow'), nsum=document.getElementById('nsum'), nfire=document.getElementById('nfire');
+  function renderN(){
+    macrow.innerHTML='';
+    nb.forEach(function(v,i){
+      var p=v*W[i];
+      var c=document.createElement('div'); c.className='macchip'+(v?' lit':'');
+      c.innerHTML='<button class="xb'+(v?' one':'')+'" data-i="'+i+'">'+v+'</button>'
+        +'<span class="eq">×</span><span class="w">'+W[i]+'</span><span class="eq">=</span><span class="pr">'+p+'</span>';
+      macrow.appendChild(c);
+    });
+    Array.prototype.forEach.call(macrow.querySelectorAll('.xb'),function(b){
+      b.addEventListener('click',function(){ var i=+b.dataset.i; nb[i]^=1; renderN(); });
+    });
+    var s=nb[0]*W[0]+nb[1]*W[1]+nb[2]*W[2];
+    nsum.innerHTML='加起來：'+nb.map(function(v,i){return v*W[i];}).join(' ＋ ')+' ＝ <b>'+s+'</b>　（門檻 '+TH+'）';
+    var fire=s>=TH;
+    nfire.className='nfire '+(fire?'on':'off');
+    nfire.textContent=fire?'神經元：亮　輸出 1':'神經元：不亮　輸出 0';
+  }
+  document.getElementById('nreset').addEventListener('click',function(){ nb=[1,0,1]; renderN(); });
+  renderN();
+
+  /* ---- 02 CPU vs accelerator race ---- */
+  var N=4, TOT=N*N;
+  var cpuGrid=document.getElementById('cpuGrid'), accGrid=document.getElementById('accGrid');
+  var cpuCells=[], accCells=[];
+  for(var i=0;i<TOT;i++){ var a=document.createElement('div'); a.className='cell'; cpuGrid.appendChild(a); cpuCells.push(a);
+    var b=document.createElement('div'); b.className='cell'; accGrid.appendChild(b); accCells.push(b); }
+  var cpu={done:0}, acc={rows:0};
+  var cpuCycEl=document.getElementById('cpuCyc'), accCycEl=document.getElementById('accCyc');
+  var cpuStepB=document.getElementById('cpuStep'), accStepB=document.getElementById('accStep');
+  var cpuTimer=null, accTimer=null;
+  function litCell(el){ el.classList.add('lit'); el.textContent='✓'; }
+  function cpuStep(){ if(cpu.done>=TOT) return false; litCell(cpuCells[cpu.done]); cpu.done++; cpuCycEl.textContent=cpu.done;
+    if(cpu.done>=TOT){ cpuStepB.disabled=true; document.getElementById('cpuAuto').disabled=true; } return true; }
+  function accStep(){ if(acc.rows>=N) return false; for(var k=0;k<N;k++) litCell(accCells[acc.rows*N+k]); acc.rows++; accCycEl.textContent=acc.rows;
+    if(acc.rows>=N){ accStepB.disabled=true; document.getElementById('accAuto').disabled=true; } return true; }
+  cpuStepB.addEventListener('click',cpuStep);
+  accStepB.addEventListener('click',accStep);
+  document.getElementById('cpuAuto').addEventListener('click',function(){ if(cpuTimer)return;
+    if(RM){ while(cpuStep()){} return; } cpuTimer=setInterval(function(){ if(!cpuStep()){ clearInterval(cpuTimer); cpuTimer=null; } },140); });
+  document.getElementById('accAuto').addEventListener('click',function(){ if(accTimer)return;
+    if(RM){ while(accStep()){} return; } accTimer=setInterval(function(){ if(!accStep()){ clearInterval(accTimer); accTimer=null; } },420); });
+  document.getElementById('raceReset').addEventListener('click',function(){
+    if(cpuTimer){clearInterval(cpuTimer);cpuTimer=null;} if(accTimer){clearInterval(accTimer);accTimer=null;}
+    cpu.done=0; acc.rows=0; cpuCycEl.textContent='0'; accCycEl.textContent='0';
+    cpuCells.concat(accCells).forEach(function(el){ el.classList.remove('lit'); el.textContent=''; });
+    cpuStepB.disabled=false; accStepB.disabled=false; document.getElementById('cpuAuto').disabled=false; document.getElementById('accAuto').disabled=false;
+  });
+
+  /* ---- 03 energy ---- */
+  var LV=[{n:'一千次',c:1e3},{n:'一百萬次',c:1e6},{n:'十億次',c:1e9},{n:'一兆次',c:1e12}];
+  var HEAT=['🟢','🟢','🟠','🔴'], eLevel=document.getElementById('eLevel'), eout=document.getElementById('eout');
+  function fmt(c){ if(c>=1e12)return (c/1e12)+' 兆'; if(c>=1e8)return (c/1e8)+' 億'; if(c>=1e4)return (c/1e4)+' 萬'; return ''+c; }
+  function renderE(){
+    var L=LV[+eLevel.value];
+    eout.innerHTML='算 <b class="hlw">'+L.n+'</b>：一般晶片花的電，大約是專用晶片的 <b class="hlw">6 倍</b>。'
+      +'<br><span class="heat">'+HEAT[+eLevel.value]+'</span> 一般晶片的發熱程度（示意）。';
+  }
+  eLevel.addEventListener('input',renderE); renderE();
+
+  /* ---- 04 datapath ---- */
+  var dp=document.getElementById('dp'), dpMem=document.getElementById('dpMem'), dpout=document.getElementById('dpout');
+  var dots=[document.getElementById('d0'),document.getElementById('d1'),document.getElementById('d2')];
+  var far=true, sending=false;
+  function layout(){ // far: memory left; 3d: memory close to compute (right side)
+    dpMem.style.left = far ? '14px' : (dp.clientWidth-88-88-24)+'px';
+    dpout.innerHTML = far ? '目前：<span class="pill slow">記憶體在遠處</span>　資料要跑很長一段路。'
+                          : '目前：<span class="pill fast">記憶體疊在旁邊（3D）</span>　資料一下就到。';
+  }
+  function send(){ if(sending) return; sending=true;
+    var startX = dpMem.offsetLeft + 88, endX = dp.clientWidth - 88 - 8;
+    var dist = endX - startX, dur = far ? 1500 : 380;
+    dots.forEach(function(d,i){ d.style.transition='none'; d.style.left=startX+'px'; d.style.opacity='1'; });
+    // force reflow then animate
+    void dp.offsetWidth;
+    dots.forEach(function(d,i){ var delay=i*90;
+      setTimeout(function(){ d.style.transition='left '+dur+'ms linear, opacity .2s'; d.style.left=endX+'px'; }, RM?0:delay);
+    });
+    var total = (RM?0:180) + dur + 120;
+    setTimeout(function(){
+      dpout.innerHTML = far
+        ? '資料<strong style="color:var(--hot)">跑了好久</strong>才到（又慢又耗電）。試試把記憶體疊上來 →'
+        : '資料<strong style="color:var(--green)">很快就到</strong>，運算單元不用餓著等。';
+      dots.forEach(function(d){ d.style.opacity='0'; });
+      sending=false;
+    }, total);
+  }
+  document.getElementById('dpSend').addEventListener('click',send);
+  document.getElementById('dpMode').addEventListener('click',function(){ far=!far;
+    this.textContent = far ? '切換：3D 封裝（把記憶體疊上來）' : '切換回：傳統（記憶體放遠處）';
+    layout();
+  });
+  window.addEventListener('resize',layout);
+  layout();
+})();
+</script>
+
+</body>
+</html>
