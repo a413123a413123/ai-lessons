@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 動作對戰・3D 原型 · 陳泓光</title>
+<style>
+  :root{ --p1:#43e08a; --p2:#ff9d3c; --ink:#eaf2ee; --dim:#8fa298;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace; }
+  *{box-sizing:border-box} html,body{margin:0;height:100%;overflow:hidden;background:#05080d;font-family:var(--sans);color:var(--ink)}
+  #c{position:fixed;inset:0;display:block}
+  .divider{position:fixed;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.5),transparent);z-index:5;pointer-events:none}
+  .hp{position:fixed;top:16px;width:38%;z-index:6;pointer-events:none}
+  .hp.l{left:2%} .hp.r{right:2%}
+  .hp .nm{font-weight:800;font-size:15px;text-shadow:0 1px 4px #000} .hp.r .nm{text-align:right}
+  .hp .track{height:14px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);border-radius:8px;overflow:hidden;margin-top:4px}
+  .hp .fill{height:100%;width:100%;transition:width .12s}
+  .hp.l .fill{background:var(--p1)} .hp.r .fill{background:var(--p2);margin-left:auto}
+  .tag{position:fixed;left:50%;transform:translateX(-50%);z-index:6;font-family:var(--mono);font-size:12px;color:var(--dim);text-align:center;pointer-events:none}
+  .tag.top{top:14px} .tag.bot{bottom:12px;line-height:1.7}
+  .banner{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9;background:rgba(5,8,13,.72)}
+  .banner.show{display:flex} .banner h1{font-size:44px;margin:0} .banner p{color:var(--dim);font-family:var(--mono);margin:10px 0 0}
+  .banner .k{color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:2px 8px;font-family:var(--mono)}
+  #err{position:fixed;left:10px;bottom:10px;right:10px;z-index:20;color:#ff6b6b;font-family:var(--mono);font-size:12px;background:rgba(0,0,0,.7);border:1px solid #ff6b6b;border-radius:8px;padding:8px;display:none;white-space:pre-wrap;max-height:40vh;overflow:auto}
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="divider"></div>
+  <div class="hp l"><div class="nm" style="color:var(--p1)">玩家 1（綠）</div><div class="track"><div class="fill" id="hp1"></div></div></div>
+  <div class="hp r"><div class="nm" style="color:var(--p2)">玩家 2（橘）</div><div class="track"><div class="fill" id="hp2"></div></div></div>
+  <div class="tag top">3D 分割畫面對戰・原型</div>
+  <div class="tag bot" id="hint">P1： W A S D 移動　空白鍵 射擊　　|　　P2： ↑ ← ↓ → 移動　Enter 射擊　　（正式版：戴 Rabboni 揮動作 → 你訓練的 AI 判斷 → 操控角色）</div>
+  <div class="banner" id="banner"><h1 id="bwin"></h1><p>按 <span class="k">R</span> 再來一場</p></div>
+  <div id="err"></div>
+
+<script src="./three.min.js"></script>
+<script>
+(function(){
+  var errEl=document.getElementById('err');
+  function showErr(m){ errEl.style.display='block'; errEl.textContent+=m+'\n'; }
+  window.addEventListener('error',function(e){ showErr('錯誤：'+(e.message||e.error)); });
+  if(typeof THREE==='undefined'){ showErr('Three.js 沒載入（three.min.js 404？）'); return; }
+
+  var W=window.innerWidth, H=window.innerHeight;
+  var scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x070b12);
+  scene.fog=new THREE.Fog(0x070b12, 18, 46);
+
+  var renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'), antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  renderer.setSize(W,H);
+  renderer.setScissorTest(true);
+
+  // 燈光
+  scene.add(new THREE.AmbientLight(0x8899aa, 0.6));
+  var dir=new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(6,14,4); scene.add(dir);
+
+  // 場地
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:0x0f1a24, roughness:1}));
+  ground.rotation.x=-Math.PI/2; scene.add(ground);
+  var grid=new THREE.GridHelper(60,30, 0x2a4658, 0x162530); grid.position.y=0.01; scene.add(grid);
+  // 邊界牆
+  var wallMat=new THREE.MeshStandardMaterial({color:0x14202b});
+  [[-0,0,-14,60,1],[0,0,14,60,1],[-14,0,0,1,28],[14,0,0,1,28]].forEach(function(w){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(w[3],2,w[4]), wallMat); m.position.set(w[0],1,w[2]); scene.add(m);
+  });
+  var ARENA_X=12, ARENA_Z=12;
+
+  // 建立戰士
+  function makeFighter(color, z, faceDir){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.7,1.2,4,10):new THREE.CylinderGeometry(0.7,0.7,2,12),
+      new THREE.MeshStandardMaterial({color:color, roughness:.5, metalness:.2}));
+    body.position.y=1.4; g.add(body);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(0.45,16,12), new THREE.MeshStandardMaterial({color:0xffffff, emissive:color, emissiveIntensity:.3}));
+    head.position.y=2.7; g.add(head);
+    var gun=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.25,1.2), new THREE.MeshStandardMaterial({color:0x333a44, metalness:.6}));
+    gun.position.set(0.55,1.6, faceDir*0.7); g.add(gun);
+    g.position.set(0,0,z);
+    scene.add(g);
+    return {grp:g, color:color, face:faceDir, hp:100, cd:0};
+  }
+  var p1=makeFighter(0x43e08a,  10, -1); // 綠，站 +z，面向 -z
+  var p2=makeFighter(0xff9d3c, -10,  1); // 橘，站 -z，面向 +z
+
+  // 相機（各自在戰士後方看向對手）
+  var cam1=new THREE.PerspectiveCamera(60, (W/2)/H, 0.1, 200);
+  var cam2=new THREE.PerspectiveCamera(60, (W/2)/H, 0.1, 200);
+
+  // 子彈
+  var shots=[]; var shotGeo=new THREE.SphereGeometry(0.22,10,8);
+  function fire(shooter, target){
+    if(shooter.cd>0) return; shooter.cd=0.35;
+    var mat=new THREE.MeshStandardMaterial({color:shooter.color, emissive:shooter.color, emissiveIntensity:.8});
+    var m=new THREE.Mesh(shotGeo, mat);
+    m.position.set(shooter.grp.position.x, 1.6, shooter.grp.position.z);
+    var dx=target.grp.position.x-m.position.x, dz=target.grp.position.z-m.position.z;
+    var d=Math.hypot(dx,dz)||1; var sp=26;
+    m.userData={vx:dx/d*sp, vz:dz/d*sp, from:shooter, life:2};
+    scene.add(m); shots.push(m);
+  }
+
+  // 鍵盤
+  var keys={};
+  window.addEventListener('keydown',function(e){ keys[e.key.toLowerCase()]=true;
+    if([' ','arrowup','arrowdown','arrowleft','arrowright','enter'].indexOf(e.key.toLowerCase())>=0) e.preventDefault();
+    if(e.key.toLowerCase()==='r' && over) restart();
+  });
+  window.addEventListener('keyup',function(e){ keys[e.key.toLowerCase()]=false; });
+
+  var hp1El=document.getElementById('hp1'), hp2El=document.getElementById('hp2'),
+      banner=document.getElementById('banner'), bwin=document.getElementById('bwin');
+  var over=false;
+  function updHP(){ hp1El.style.width=Math.max(0,p1.hp)+'%'; hp2El.style.width=Math.max(0,p2.hp)+'%'; }
+  function restart(){ p1.hp=100;p2.hp=100;p1.grp.position.set(0,0,10);p2.grp.position.set(0,0,-10);
+    shots.forEach(function(s){scene.remove(s);}); shots.length=0; over=false; banner.classList.remove('show'); updHP(); }
+
+  function move(f, ax, az, speed, dt){
+    f.grp.position.x=Math.max(-ARENA_X, Math.min(ARENA_X, f.grp.position.x+ax*speed*dt));
+    f.grp.position.z=Math.max(-ARENA_Z, Math.min(ARENA_Z, f.grp.position.z+az*speed*dt));
+  }
+
+  var last=0;
+  function loop(t){
+    requestAnimationFrame(loop);
+    var dt=Math.min(0.05,(t-last)/1000)||0; last=t;
+    if(!over){
+      var sp=7;
+      // P1: WASD（往對手方向是 -z）
+      var a1x=(keys['d']?1:0)-(keys['a']?1:0), a1z=(keys['s']?1:0)-(keys['w']?1:0);
+      move(p1, a1x, a1z, sp, dt);
+      // P2: 方向鍵（往對手方向是 +z，所以上鍵應往 -z…以對手為前方：上=前進=往+z 對手在-z? p2在-z面向+z，前方是+z）
+      var a2x=(keys['arrowright']?1:0)-(keys['arrowleft']?1:0), a2z=(keys['arrowdown']?1:0)-(keys['arrowup']?1:0);
+      // 讓 P2 的「上」是朝自己前方(對手)：對手在 +z 方向… p2 在 z=-10，對手在 +10，前方=+z，故 上鍵=+z
+      move(p2, -a2x, -a2z, sp, dt);
+      p1.cd=Math.max(0,p1.cd-dt); p2.cd=Math.max(0,p2.cd-dt);
+      if(keys[' ']) fire(p1,p2);
+      if(keys['enter']) fire(p2,p1);
+      // 子彈
+      for(var i=shots.length-1;i>=0;i--){ var s=shots[i], u=s.userData;
+        s.position.x+=u.vx*dt; s.position.z+=u.vz*dt; u.life-=dt;
+        var tgt=(u.from===p1)?p2:p1;
+        if(Math.hypot(s.position.x-tgt.grp.position.x, s.position.z-tgt.grp.position.z)<1.1){
+          tgt.hp-=12; updHP(); scene.remove(s); shots.splice(i,1);
+          if(tgt.hp<=0){ over=true; bwin.textContent=(tgt===p1?'玩家 2（橘）':'玩家 1（綠）')+' 獲勝！';
+            bwin.style.color=(tgt===p1?'#ff9d3c':'#43e08a'); banner.classList.add('show'); }
+          continue;
+        }
+        if(u.life<=0 || Math.abs(s.position.x)>15 || Math.abs(s.position.z)>15){ scene.remove(s); shots.splice(i,1); }
+      }
+    }
+    // 相機跟隨
+    cam1.position.set(p1.grp.position.x, 3.2, p1.grp.position.z+5.5);
+    cam1.lookAt(p2.grp.position.x, 1.5, p2.grp.position.z);
+    cam2.position.set(p2.grp.position.x, 3.2, p2.grp.position.z-5.5);
+    cam2.lookAt(p1.grp.position.x, 1.5, p1.grp.position.z);
+    // 分割渲染
+    var w=window.innerWidth, h=window.innerHeight, hw=Math.floor(w/2);
+    renderer.setViewport(0,0,hw,h); renderer.setScissor(0,0,hw,h); renderer.render(scene,cam1);
+    renderer.setViewport(hw,0,w-hw,h); renderer.setScissor(hw,0,w-hw,h); renderer.render(scene,cam2);
+  }
+
+  window.addEventListener('resize',function(){ var w=window.innerWidth,h=window.innerHeight;
+    renderer.setSize(w,h); cam1.aspect=(w/2)/h; cam2.aspect=(w/2)/h; cam1.updateProjectionMatrix(); cam2.updateProjectionMatrix(); });
+
+  updHP(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
