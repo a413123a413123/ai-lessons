@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>訓練你自己的 AI · 動作辨識闖關 · 陳泓光</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<style>
+  :root{
+    /* 中性色階（帶冷色相偏移，DESIGN.md §2.1） */
+    --n-0:#0d1117; --n-2:#171d26; --n-3:#1e2530; --n-4:#27303c; --n-5:#323c4a; --n-8:#6e7a8a; --n-10:#a8b3c1; --n-12:#e6eaf0;
+    --bg:var(--n-0); --surface-1:var(--n-2); --surface-2:var(--n-3); --surface-3:var(--n-4);
+    --text-primary:var(--n-12); --text-secondary:var(--n-10); --text-muted:var(--n-8);
+    --border-subtle:var(--n-3); --border-default:var(--n-4); --border-strong:var(--n-5);
+    /* 主色＝遊戲草綠（單一 accent，白字 5.3:1） */
+    --accent-solid:#1f7a4f; --accent-hover:#2ea86a; --accent-text:#57c184; --accent-bg:#123425; --accent-border:#2c6043; --accent-contrast:#ffffff;
+    --danger:#e5675f; --warning:#e0a13a; --gold:#e0b53a; --info:#6ea8d8;
+    --font-sans:"IBM Plex Sans","IBM Plex Sans TC","Noto Sans TC",system-ui,sans-serif;
+    --font-mono:"IBM Plex Mono",ui-monospace,Consolas,"Noto Sans TC",monospace;
+    --text-caption:.8125rem; --text-sm:.9375rem; --text-body:1.0625rem; --text-lead:1.25rem; --text-h3:1.5rem;
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px; --space-8:64px;
+    --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-full:9999px;
+    --shadow-md:0 4px 12px rgba(0,0,0,.45);
+    --dur-fast:120ms; --dur-base:200ms; --ease-out:cubic-bezier(0,0,.2,1);
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .game{font-family:var(--font-sans); color:var(--text-primary); background:var(--bg); min-height:100vh; font-size:var(--text-body); line-height:1.75; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:680px; margin:0 auto; padding:var(--space-4) var(--space-4) var(--space-8)}
+  h1,h2,h3{margin:0; color:var(--text-primary); line-height:1.3}
+
+  /* HUD */
+  .hud{position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-4); margin:calc(-1*var(--space-4)) calc(-1*var(--space-4)) var(--space-4); background:rgba(13,17,23,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border-subtle)}
+  .hud .who{display:flex; align-items:center; gap:var(--space-2); flex:1; min-width:0}
+  .hud .nm{font-weight:var(--fw-bold); color:var(--text-primary); font-size:var(--text-sm)} .hud .lv{font-family:var(--font-mono); font-size:var(--text-caption); color:var(--accent-text)}
+  .hud .stat{font-family:var(--font-mono); font-size:var(--text-sm); color:var(--text-secondary); text-align:right; white-space:nowrap}
+  .hud .stat b{color:var(--gold)} .hud .miss{color:var(--text-muted)}
+
+  /* buddy（搭檔角色；用語意色、無發光） */
+  .buddy{width:44px;height:44px;border-radius:var(--radius-lg);background:var(--surface-3);border:1px solid var(--border-strong);position:relative;flex:none;transition:transform var(--dur-base) var(--ease-out)}
+  .buddy.big{width:96px;height:96px;margin:0 auto}
+  .buddy .eye{position:absolute;top:34%;width:16%;height:16%;border-radius:50%;background:var(--accent-text);transition:.15s}
+  .buddy.big .eye{top:32%;height:15%}
+  .buddy .eye.l{left:26%} .buddy .eye.r{right:26%}
+  .buddy .mo{position:absolute;left:32%;right:32%;bottom:26%;height:10%;border-radius:0 0 40px 40px;background:transparent;border-bottom:2.5px solid var(--accent-text);transition:.15s}
+  .buddy.happy .mo{bottom:22%;height:20%;border-bottom-width:3px;border-radius:0 0 60px 60px}
+  .buddy.happy .eye{height:9%;border-radius:40%}
+  .buddy.dizzy .eye{background:var(--danger);border-radius:20%;transform:rotate(45deg)}
+  .buddy.dizzy .mo{border:none;background:var(--danger);height:8%;border-radius:50%;left:42%;right:42%}
+  .buddy.think .eye{height:6%;border-radius:40%;background:var(--warning)} .buddy.think .mo{border-color:var(--warning)}
+  .buddy.star .eye{background:var(--gold);border-radius:20%;transform:rotate(45deg)} .buddy.star .mo{border-color:var(--gold);height:22%}
+
+  .card{background:var(--surface-1); border:1px solid var(--border-default); border-radius:var(--radius-lg); padding:var(--space-5); margin-bottom:var(--space-4)}
+  .missionTag{font-family:var(--font-mono); font-size:var(--text-caption); color:var(--accent-text); letter-spacing:.04em}
+  h2{font-size:var(--text-h3); font-weight:var(--fw-bold); margin:var(--space-1) 0 var(--space-2)}
+  .intro{font-size:var(--text-sm); color:var(--text-secondary); margin:0 0 var(--space-4)}
+  .hl{color:var(--accent-text);font-weight:var(--fw-semibold)} .hla{color:var(--warning);font-weight:var(--fw-semibold)}
+
+  /* teach chips */
+  .teach{display:flex; flex-wrap:wrap; gap:var(--space-2); margin:var(--space-2) 0}
+  .g{display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border-radius:var(--radius-md); border:1px solid var(--border-default); background:var(--surface-2); cursor:pointer; font-size:var(--text-sm); color:var(--text-secondary); transition:border-color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out)}
+  .g .dot{width:10px;height:10px;border-radius:50%}
+  .g .pg{font-family:var(--font-mono); font-size:var(--text-caption); color:var(--text-muted)}
+  .g .pg.ok{color:var(--accent-text)}
+  .g.sel{border-color:var(--accent-border); background:var(--accent-bg); color:var(--text-primary)}
+
+  /* pad */
+  .padwrap{position:relative; margin:var(--space-3) 0}
+  .pad{width:100%; aspect-ratio:5/3; background:var(--surface-2); border:1px solid var(--border-default); border-radius:var(--radius-lg); touch-action:none; display:block; cursor:crosshair}
+  .padhint{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:var(--text-sm); pointer-events:none; text-align:center; padding:0 var(--space-5); transition:opacity var(--dur-fast)}
+
+  /* 按鈕：一畫面一顆主色，其餘中性 */
+  .btn{font-family:var(--font-sans); font-size:var(--text-body); font-weight:var(--fw-semibold); background:var(--accent-solid); color:var(--accent-contrast); border:none; padding:var(--space-3) var(--space-5); border-radius:var(--radius-md); cursor:pointer; transition:background var(--dur-fast) var(--ease-out)}
+  .btn:hover{background:var(--accent-hover)} .btn:disabled{opacity:.45; cursor:default}
+  .btn.sec,.btn.cyan{background:var(--surface-2); color:var(--text-primary); border:1px solid var(--border-default); font-weight:var(--fw-medium)}
+  .btn.sec:hover,.btn.cyan:hover{background:var(--surface-3)}
+  .btn.ghost{background:transparent; color:var(--accent-text); font-weight:var(--fw-medium)}
+  .btn.ghost:hover{background:var(--accent-bg)}
+  .btnrow{display:flex; gap:var(--space-3); flex-wrap:wrap; margin-top:var(--space-3); align-items:center}
+  .toast{font-size:var(--text-sm); min-height:20px; margin-top:var(--space-2); font-family:var(--font-mono); color:var(--accent-text)}
+  .toast.warn{color:var(--warning)} .toast.err{color:var(--danger)}
+
+  /* challenge */
+  .prompt{text-align:center; padding:var(--space-1) 0}
+  .prompt .lbl{font-size:var(--text-sm); color:var(--text-muted)}
+  .prompt .big{font-size:var(--text-lead); font-weight:var(--fw-bold); color:var(--text-primary); margin-top:var(--space-1)}
+  .chbar{display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:var(--text-sm); color:var(--text-muted); margin-top:var(--space-2)}
+  .chbar b{color:var(--text-primary)} .combo{color:var(--gold)!important}
+  .verdict{text-align:center; font-size:var(--text-lead); font-weight:var(--fw-bold); min-height:28px; margin-top:var(--space-2)}
+  .verdict.ok{color:var(--accent-text)} .verdict.no{color:var(--danger)}
+  .qprog{height:6px; background:var(--surface-2); border-radius:var(--radius-sm); overflow:hidden; margin-top:var(--space-2)}
+  .qprog > i{display:block; height:100%; width:0; background:var(--accent-solid); transition:width var(--dur-base) var(--ease-out)}
+
+  /* result */
+  .stars{font-size:36px; letter-spacing:6px; text-align:center; margin:var(--space-2) 0; color:var(--gold)}
+  .stars .off{opacity:.22}
+  .rtitle{text-align:center; font-size:var(--text-h3); font-weight:var(--fw-bold); color:var(--text-primary)}
+  .rmsg{text-align:center; color:var(--text-secondary); font-size:var(--text-sm); margin:var(--space-2) auto var(--space-1); max-width:44ch}
+  .center{text-align:center}
+  .badge{display:inline-block; font-family:var(--font-mono); font-size:var(--text-caption); color:var(--gold); border:1px solid var(--border-strong); border-radius:var(--radius-full); padding:var(--space-1) var(--space-3); margin:var(--space-1)}
+
+  .foot{color:var(--text-muted); font-size:var(--text-caption); text-align:center; padding:var(--space-5) 0 0; font-family:var(--font-mono)}
+  .learn{border-left:2px solid var(--border-strong); padding:var(--space-1) 0 var(--space-1) var(--space-3); margin:var(--space-4) 0 0; font-size:var(--text-sm); color:var(--text-muted)}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+
+<div class="game"><div class="wrap">
+  <div class="hud">
+    <div class="who">
+      <div class="buddy idle" id="hudBuddy"><span class="eye l"></span><span class="eye r"></span><span class="mo"></span></div>
+      <div><div class="nm">波波 <span style="font-weight:400;color:var(--text-muted);font-size:12px">你的 AI 搭檔</span></div><div class="lv" id="lv">見習訓練師</div></div>
+    </div>
+    <div class="stat"><span id="starHud">⭐ 0</span>　<span class="miss" id="missHud">任務 1 / 3</span></div>
+  </div>
+
+  <div id="stage"></div>
+
+  <div class="foot">2026 Playchip 玩創晶片 · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
+</div></div>
+
+<script>
+(function(){
+  /* ================= 手勢辨識（輕量 $1）================= */
+  var N=32;
+  function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}
+  function pathLen(p){var d=0;for(var i=1;i<p.length;i++)d+=dist(p[i-1],p[i]);return d;}
+  function resample(pts,n){
+    if(pts.length<2)return null;
+    var src=pts.slice(),I=pathLen(src)/(n-1),D=0,out=[src[0]];
+    for(var i=1;i<src.length;i++){var d=dist(src[i-1],src[i]);if(d===0)continue;
+      if(D+d>=I){var t=(I-D)/d;var q={x:src[i-1].x+t*(src[i].x-src[i-1].x),y:src[i-1].y+t*(src[i].y-src[i-1].y)};out.push(q);src.splice(i,0,q);D=0;}
+      else D+=d;}
+    while(out.length<n)out.push(src[src.length-1]);
+    return out.slice(0,n);
+  }
+  function normalize(pts){var cx=0,cy=0,i;for(i=0;i<pts.length;i++){cx+=pts[i].x;cy+=pts[i].y;}cx/=pts.length;cy/=pts.length;
+    var m=[],mx=1e-6;for(i=0;i<pts.length;i++){var x=pts[i].x-cx,y=pts[i].y-cy;m.push({x:x,y:y});mx=Math.max(mx,Math.abs(x),Math.abs(y));}
+    for(i=0;i<m.length;i++){m[i].x/=mx;m[i].y/=mx;}return m;}
+  function prep(s){var r=resample(s,N);return r?normalize(r):null;}
+  function pdist(a,b){var s=0;for(var i=0;i<a.length;i++)s+=dist(a[i],b[i]);return s/a.length;}
+  function classify(p){ // 回傳 {top, conf:{gi:val}}
+    var best={};
+    for(var i=0;i<samples.length;i++){var c=samples[i].cls,d=pdist(p,samples[i].pts);if(best[c]===undefined||d<best[c])best[c]=d;}
+    var keys=Object.keys(best);if(!keys.length)return null;
+    var sc={},sum=0;keys.forEach(function(k){var v=1/(best[k]+0.05);sc[k]=v;sum+=v;});
+    var conf={},top=null,tv=-1;keys.forEach(function(k){var v=sc[k]/sum;conf[k]=v;if(v>tv){tv=v;top=+k;}});
+    return {top:top,conf:conf};
+  }
+
+  /* ================= 遊戲狀態 ================= */
+  var COLORS=['#57c184','#6ea8d8','#e0a13a']; // 低飽和：草綠/藍/琥珀（去霓虹）
+  var MISSIONS=[
+    {id:1,title:'教牠兩招',gestures:['揮上下','揮左右'],hintDraw:['上下畫一直線','左右畫一橫線'],need:3,quiz:5,pass:4,star:1,collect:true,
+     intro:'先教你的搭檔波波認得兩個動作。點一個招式，在板子上把它畫出來，每招至少畫 <b>3</b> 次，再按訓練。'},
+    {id:2,title:'三招 ＋ 偏誤魔王',gestures:['揮上下','揮左右','畫圓圈'],hintDraw:['上下一直線','左右一橫線','畫一個圈'],need:4,quiz:6,pass:5,star:2,collect:true,boss:true,
+     intro:'多一招「畫圓圈」。而且魔王「刁鑽博士」會用你<b>沒教過的畫法</b>考你——想贏，每招要收<span class="hla">多種不同畫法</span>（大的小的、快的慢的、順時鐘逆時鐘）。'},
+    {id:3,title:'大師連擊賽',gestures:['揮上下','揮左右','畫圓圈'],need:0,quiz:10,pass:7,star:3,collect:false,rapid:true,
+     intro:'最終挑戰！用你訓練好的波波連續應戰，系統快速出題，衝最高<span class="hl">連擊</span>。答對 7 題以上，波波就是<b>動作大師</b>！'}
+  ];
+  var stage=document.getElementById('stage');
+  var mi=0, samples=[], selected=0, trained=false, passed=[0,0,0], stars=0;
+  var phase='collect'; // collect | challenge | result
+  var ch=null; // 挑戰狀態
+  var busy=false;
+
+  var hudBuddy=document.getElementById('hudBuddy'), lvEl=document.getElementById('lv'),
+      starHud=document.getElementById('starHud'), missHud=document.getElementById('missHud');
+  function setMood(b,m){ b.className='buddy '+m + (b===hudBuddy?'':' big'); }
+  function updHud(){
+    starHud.textContent='⭐ '+stars;
+    missHud.textContent='任務 '+(mi+1)+' / 3';
+    var titles=['見習訓練師','初級訓練師','進階訓練師','動作大師 🏆'];
+    lvEl.textContent=titles[Math.min(3,passed.reduce(function(a,b){return a+b;},0))];
+  }
+  function M(){ return MISSIONS[mi]; }
+  function needMet(){ var m=M(); return m.gestures.every(function(g,i){ return cnt(i)>=m.need; }); }
+  function cnt(i){ return samples.filter(function(s){return s.cls===i;}).length; }
+
+  /* ================= 畫布（共用）================= */
+  var pad,ctx,dpr=Math.min(window.devicePixelRatio||1,2),drawing=false,stroke=[],padHintEl;
+  function bindPad(){
+    pad=document.getElementById('pad'); if(!pad)return; ctx=pad.getContext('2d'); padHintEl=document.getElementById('padhint');
+    sizePad();
+    pad.addEventListener('pointerdown',function(e){drawing=true;stroke=[pos(e)];clearPad();if(padHintEl)padHintEl.style.opacity='0';try{pad.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+    pad.addEventListener('pointermove',function(e){if(!drawing)return;var p=pos(e);stroke.push(p);
+      ctx.strokeStyle=(phase==='collect')?COLORS[selected%3]:'#a8b3c1';ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.beginPath();ctx.moveTo(stroke[stroke.length-2].x,stroke[stroke.length-2].y);ctx.lineTo(p.x,p.y);ctx.stroke();});
+    pad.addEventListener('pointerup',function(){if(!drawing)return;drawing=false;if(padHintEl)padHintEl.style.opacity='1';onStroke();});
+    pad.addEventListener('pointercancel',function(){drawing=false;});
+  }
+  function sizePad(){ if(!pad)return; var r=pad.getBoundingClientRect(); pad.width=r.width*dpr; pad.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  window.addEventListener('resize',sizePad);
+  function clearPad(){ if(ctx)ctx.clearRect(0,0,pad.width,pad.height); }
+  function pos(e){ var r=pad.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+
+  function onStroke(){
+    if(stroke.length<4){ flash('畫長一點點，再一次','warn'); return; }
+    var p=prep(stroke); if(!p){ flash('這筆太短，再一次','warn'); return; }
+    if(phase==='collect') collectStroke(p);
+    else if(phase==='challenge') judgeStroke(p);
+  }
+  function flash(msg,cls){ var t=document.getElementById('toast'); if(t){ t.className='toast'+(cls?' '+cls:''); t.textContent=msg; } }
+
+  /* ================= collect ================= */
+  function collectStroke(p){
+    samples.push({cls:selected,pts:p}); trained=false;
+    flash('波波記住了一筆 →「'+M().gestures[selected]+'」（第 '+cnt(selected)+' 筆）');
+    setMood(hudBuddy,'think'); setTimeout(function(){setMood(hudBuddy,'idle');},400);
+    setTimeout(clearPad,220); renderCollect(true);
+  }
+  document_on(); // 綁定委派（見下）
+
+  /* ================= 判斷（挑戰）================= */
+  function judgeStroke(p){
+    if(busy)return; busy=true;
+    var r=classify(p), ok=r && r.top===ch.target;
+    var vd=document.getElementById('verdict');
+    if(ok){ ch.hits++; ch.combo++; ch.maxCombo=Math.max(ch.maxCombo,ch.combo);
+      vd.className='verdict ok'; vd.textContent='✓ 答對！波波認出「'+M().gestures[ch.target]+'」'+(ch.combo>=2?'（連擊 '+ch.combo+'）':'');
+      setMood(hudBuddy, ch.combo>=3?'star':'happy');
+    } else {
+      ch.combo=0; vd.className='verdict no';
+      var guess=r?('牠以為是「'+M().gestures[r.top]+'」'):'牠看不懂';
+      vd.textContent='✗ 差一點，'+guess;
+      setMood(hudBuddy,'dizzy');
+    }
+    ch.q++; updChallengeBar();
+    setTimeout(function(){ setMood(hudBuddy,'idle'); busy=false; if(ch.q>=M().quiz) endChallenge(); else nextQ(); }, 850);
+  }
+  function nextQ(){
+    var m=M(); ch.target=Math.floor(Math.random()*m.gestures.length);
+    document.getElementById('promptBig').textContent=m.gestures[ch.target];
+    clearPad();
+  }
+  function updChallengeBar(){
+    var m=M();
+    document.getElementById('chQ').innerHTML='第 <b>'+Math.min(ch.q+1,m.quiz)+'</b> / '+m.quiz+' 題';
+    document.getElementById('chScore').innerHTML='答對 <b>'+ch.hits+'</b>　<span class="combo">連擊 '+ch.combo+'</span>';
+    document.getElementById('qfill').style.width=(ch.q/m.quiz*100)+'%';
+  }
+  function endChallenge(){
+    var m=M(), win=ch.hits>=m.pass;
+    phase='result'; renderResult(win);
+  }
+
+  /* ================= 畫面 ================= */
+  function renderCollect(partialOnly){
+    var m=M();
+    if(!partialOnly){
+      phase='collect'; selected=0;
+      stage.innerHTML =
+      '<div class="card">'
+      + '<div class="missionTag">任務 '+m.id+' / 3</div><h2>'+m.title+'</h2>'
+      + '<p class="intro">'+m.intro+'</p>'
+      + '<div class="teach" id="teach"></div>'
+      + '<div class="padwrap"><canvas class="pad" id="pad"></canvas><div class="padhint" id="padhint"></div></div>'
+      + '<div class="toast" id="toast"></div>'
+      + '<div class="btnrow"><button class="btn" id="trainBtn" disabled>訓練波波</button>'
+      + '<button class="btn ghost" id="clearG">清除這招</button></div>'
+      + '<div class="learn">💡 每招畫越多、畫法越多樣，波波越不會被騙。</div>'
+      + '</div>';
+      bindPad();
+      document.getElementById('trainBtn').addEventListener('click',doTrain);
+      document.getElementById('clearG').addEventListener('click',function(){ samples=samples.filter(function(s){return s.cls!==selected;}); trained=false; renderCollect(true); flash('清掉「'+m.gestures[selected]+'」的資料'); });
+    }
+    // teach chips + hint + train enabled
+    var teach=document.getElementById('teach'); teach.innerHTML='';
+    m.gestures.forEach(function(g,i){
+      var c=cnt(i), ok=c>=m.need;
+      var d=document.createElement('div'); d.className='g'+(i===selected?' sel':'');
+      d.innerHTML='<span class="dot" style="background:'+COLORS[i%3]+'"></span>'+g+' <span class="pg'+(ok?' ok':'')+'">'+c+' / '+m.need+(ok?' ✓':'')+'</span>';
+      d.addEventListener('click',function(){ selected=i; renderCollect(true); updPadHint(); });
+      teach.appendChild(d);
+    });
+    updPadHint();
+    var tb=document.getElementById('trainBtn'); if(tb) tb.disabled=!needMet();
+  }
+  function updPadHint(){ var h=document.getElementById('padhint'); if(h) h.textContent='在這裡畫出「'+M().gestures[selected]+'」（'+(M().hintDraw?M().hintDraw[selected]:'')+'）'; }
+
+  function doTrain(){
+    var m=M();
+    setMood(hudBuddy,'think');
+    // 平衡檢查
+    var counts=m.gestures.map(function(g,i){return cnt(i);});
+    var mn=Math.min.apply(null,counts), mx=Math.max.apply(null,counts);
+    trained=true;
+    setTimeout(function(){
+      setMood(hudBuddy,'happy'); setTimeout(function(){setMood(hudBuddy,'idle');},500);
+      startChallenge();
+      if(mx>=mn*2.2 && m.boss) flash('','');
+    }, 500);
+    flash('訓練中…波波正在從你的例子找規律');
+  }
+
+  function renderChallenge(){
+    var m=M();
+    phase='challenge'; ch={target:0,q:0,hits:0,combo:0,maxCombo:0}; busy=false;
+    var bossline = m.boss ? '<p class="intro">魔王 <span class="hla">刁鑽博士</span> 登場！他會用刁鑽畫法出題。做出畫面喊的招式！</p>'
+                          : (m.rapid ? '<p class="intro">連擊賽開始！快速做出畫面喊的招式，衝連擊。</p>' : '<p class="intro">做出畫面喊的招式，讓波波認出來！</p>');
+    stage.innerHTML =
+      '<div class="card">'
+      + '<div class="missionTag">任務 '+m.id+' · 考驗</div>'+bossline
+      + '<div class="prompt"><div class="lbl">做出這招 ↓</div><div class="big" id="promptBig">—</div></div>'
+      + '<div class="chbar"><span id="chQ"></span><span id="chScore"></span></div>'
+      + '<div class="qprog"><i id="qfill"></i></div>'
+      + '<div class="padwrap"><canvas class="pad" id="pad"></canvas><div class="padhint" id="padhint">在這裡把它畫出來</div></div>'
+      + '<div class="verdict" id="verdict"></div>'
+      + '</div>';
+    bindPad(); updChallengeBar(); nextQ();
+  }
+  function startChallenge(){ renderChallenge(); }
+
+  function renderResult(win){
+    var m=M();
+    if(win && !passed[mi]){ passed[mi]=1; stars+=m.star; }
+    updHud();
+    var starStr=''; for(var i=0;i<3;i++){ starStr += (i<(win?m.star:0))?'★':'<span class="off">★</span>'; }
+    var big=document.getElementById('hudBuddy'); // 用大搭檔在結果卡
+    var last = mi>=MISSIONS.length-1;
+    var title, msg, btns;
+    if(win){
+      setMood(hudBuddy, last?'star':'happy');
+      title = last ? '🏆 波波成為「動作大師」！' : '過關！波波升級了';
+      msg = last ? '你從零把一個 AI 訓練成看得懂動作的搭檔——收集資料、訓練、應戰、打敗偏誤，你走完了真正的機器學習。'
+                 : '你答對 '+ch.hits+' / '+m.quiz+' 題，拿到 '+m.star+' 顆星。';
+      btns = last
+        ? '<button class="btn" id="again">再玩一次</button>'
+        : '<button class="btn" id="next">前往任務 '+(m.id+1)+' →</button>';
+    } else {
+      setMood(hudBuddy,'dizzy');
+      title = m.boss ? '被刁鑽博士電了！' : '差一點點';
+      msg = m.boss ? '你答對 '+ch.hits+' / '+m.quiz+'，沒到 '+m.pass+'。八成是<span class="hla">資料太單一</span>——回去幫每招補上不同的畫法（大小、快慢、方向），再挑戰！'
+                   : '你答對 '+ch.hits+' / '+m.quiz+'，要 '+m.pass+' 題才過。多收一點資料、再訓練試試。';
+      btns = '<button class="btn" id="back">回去補資料</button><button class="btn sec" id="retry">直接再考一次</button>';
+    }
+    stage.innerHTML =
+      '<div class="card center">'
+      + '<div class="buddy '+hudBuddy.className.replace('buddy','').trim()+' big" id="bigBuddy"><span class="eye l"></span><span class="eye r"></span><span class="mo"></span></div>'
+      + '<div class="stars">'+starStr+'</div>'
+      + '<div class="rtitle">'+title+'</div><p class="rmsg">'+msg+'</p>'
+      + '<div class="chbar" style="justify-content:center;gap:20px"><span>答對 <b>'+ch.hits+'</b>/'+m.quiz+'</span><span>最高連擊 <b>'+ch.maxCombo+'</b></span></div>'
+      + '<div class="btnrow" style="justify-content:center">'+btns+'</div>'
+      + (last&&win?'<div style="margin-top:10px"><span class="badge">🏅 動作大師</span><span class="badge">⭐ '+stars+'</span></div>':'')
+      + '<div class="learn" style="text-align:left">正式版：把「畫動作」換成戴 <b>Rabboni</b> 揮真實動作，這整套流程一模一樣。</div>'
+      + '</div>';
+    var b;
+    if((b=document.getElementById('next'))) b.addEventListener('click',function(){ mi++; enterMission(); });
+    if((b=document.getElementById('again'))) b.addEventListener('click',function(){ mi=0;samples=[];passed=[0,0,0];stars=0;enterMission(); });
+    if((b=document.getElementById('back'))) b.addEventListener('click',function(){ renderCollect(false); });
+    if((b=document.getElementById('retry'))) b.addEventListener('click',function(){ renderChallenge(); });
+  }
+
+  function enterMission(){
+    var m=M(); updHud();
+    if(m.collect){ samples=[]; trained=false; renderCollect(false); }
+    else { renderChallenge(); } // 任務3 沿用上一關訓練好的 samples
+  }
+
+  // 事件委派佔位（避免未定義）
+  function document_on(){}
+
+  enterMission();
+})();
+</script>
+
+</body>
+</html>
