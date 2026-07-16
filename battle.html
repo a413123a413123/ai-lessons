@@ -86,8 +86,18 @@
   var p2=makeFighter(0xff9d3c, -10,  1); // 橘，站 -z，面向 +z
 
   // 相機（各自在戰士後方看向對手）
-  var cam1=new THREE.PerspectiveCamera(60, (W/2)/H, 0.1, 200);
-  var cam2=new THREE.PerspectiveCamera(60, (W/2)/H, 0.1, 200);
+  var cam1=new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+  var cam2=new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+  // 尺寸：動態取視窗大小（避免載入瞬間抓到 0 導致畫布 0×0）
+  var lastW=0,lastH=0;
+  function fit(){
+    var w=window.innerWidth||document.documentElement.clientWidth||800;
+    var h=window.innerHeight||document.documentElement.clientHeight||600;
+    renderer.setSize(w,h);
+    cam1.aspect=(w/2)/h; cam2.aspect=(w/2)/h; cam1.updateProjectionMatrix(); cam2.updateProjectionMatrix();
+    lastW=w; lastH=h;
+  }
+  window.addEventListener('resize',fit); fit();
 
   // 子彈
   var shots=[]; var shotGeo=new THREE.SphereGeometry(0.22,10,8);
@@ -156,14 +166,13 @@
     cam1.lookAt(p2.grp.position.x, 1.5, p2.grp.position.z);
     cam2.position.set(p2.grp.position.x, 3.2, p2.grp.position.z-5.5);
     cam2.lookAt(p1.grp.position.x, 1.5, p1.grp.position.z);
-    // 分割渲染
-    var w=window.innerWidth, h=window.innerHeight, hw=Math.floor(w/2);
+    // 分割渲染（每幀確認尺寸，抓到 0→實際 的變化就重設）
+    var w=window.innerWidth||lastW, h=window.innerHeight||lastH;
+    if(w && h && (w!==lastW || h!==lastH)) fit();
+    var hw=Math.floor(w/2);
     renderer.setViewport(0,0,hw,h); renderer.setScissor(0,0,hw,h); renderer.render(scene,cam1);
     renderer.setViewport(hw,0,w-hw,h); renderer.setScissor(hw,0,w-hw,h); renderer.render(scene,cam2);
   }
-
-  window.addEventListener('resize',function(){ var w=window.innerWidth,h=window.innerHeight;
-    renderer.setSize(w,h); cam1.aspect=(w/2)/h; cam2.aspect=(w/2)/h; cam1.updateProjectionMatrix(); cam2.updateProjectionMatrix(); });
 
   updHP(); requestAnimationFrame(loop);
 })();
