@@ -231,7 +231,8 @@
         <text class="ilbl" data-sig="c2" x="276" y="62" fill="#938a76" font-size="10" font-family="monospace">c2</text>
       </svg>
       <div class="sum" id="fsum"></div>
-      <div class="cap">全加器 ＝ 兩個半加器 ＋ 一個 OR。S＝A⊕B⊕Cin（總和）；Cout＝進位輸出。中間訊號 s1／c1／c2 會跟著亮。</div>
+      <table class="htable" id="fatable"><thead><tr><th>A</th><th>B</th><th>Cin</th><th>S 和</th><th>Cout 進位</th></tr></thead><tbody></tbody></table>
+      <div class="cap">全加器 ＝ 兩個半加器 ＋ 一個 OR。S＝A⊕B⊕Cin（總和）；Cout＝進位輸出。切 A／B／Cin，表格會高亮對應那一列。</div>
     </div>
 
     <h3>③ 暫存器：打開看裡面的邏輯閘</h3>
@@ -509,6 +510,10 @@
   /* ---- 02b full adder (circuit) ---- */
   var fa={A:0,B:0,C:0}, fA=document.getElementById('fA'),fB=document.getElementById('fB'),fCin=document.getElementById('fCin'),
       fsum=document.getElementById('fsum'), faSvg=document.getElementById('faSvg');
+  var fatbody=document.querySelector('#fatable tbody');
+  [0,1,2,3,4,5,6,7].forEach(function(n){ var A=(n>>2)&1,B=(n>>1)&1,C=n&1,S=A^B^C,Co=(A&B)|(A&C)|(B&C);
+    var tr=document.createElement('tr'); tr.dataset.k=''+A+B+C;
+    tr.innerHTML='<td>'+A+'</td><td>'+B+'</td><td>'+C+'</td><td>'+S+'</td><td>'+Co+'</td>'; fatbody.appendChild(tr); });
   function updFA(){
     var g={}; g.A=fa.A; g.B=fa.B; g.Cin=fa.C; g.s1=g.A^g.B; g.c1=g.A&g.B; g.S=g.s1^g.Cin; g.c2=g.s1&g.Cin; g.Cout=g.c1|g.c2;
     [[fA,'A'],[fB,'B'],[fCin,'Cin']].forEach(function(x){ x[0].textContent=g[x[1]]; x[0].classList.toggle('one',g[x[1]]===1); });
@@ -521,6 +526,7 @@
     ha2.setAttribute('fill',(g.S||g.c2)?'rgba(245,176,39,.22)':'rgba(245,176,39,.10)');
     if(orb) orb.setAttribute('fill', g.Cout?'rgba(56,198,217,.3)':'rgba(56,198,217,.10)');
     fsum.innerHTML='A+B+Cin = '+g.A+'+'+g.B+'+'+g.Cin+' = <b>'+(g.A+g.B+g.Cin)+'</b>　（二進位 '+g.Cout+''+g.S+'）';
+    Array.prototype.forEach.call(fatbody.children,function(tr){tr.classList.toggle('cur',tr.dataset.k===(''+g.A+g.B+g.Cin));});
   }
   fA.addEventListener('click',function(){fa.A^=1;updFA();});fB.addEventListener('click',function(){fa.B^=1;updFA();});fCin.addEventListener('click',function(){fa.C^=1;updFA();});updFA();
 
