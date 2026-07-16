@@ -3,57 +3,85 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 互動教材 · 陳泓光</title>
+<title>AI × 半導體 互動教材 · 陳泓光</title>
 <style>
   :root{
-    --bg:#070c18; --cyan:#00d4ff; --green:#00e676; --purple:#9b6dff; --gold:#ffd060;
-    --text:#dce8f4; --dim:#7a8fa8; --line2:rgba(255,255,255,.07); --line:rgba(0,212,255,.18);
+    --bg:#070c18; --cyan:#00d4ff; --green:#00e676; --purple:#9b6dff; --gold:#ffd060; --amber:#ff9d3c;
+    --text:#dce8f4; --dim:#7a8fa8; --ink:#fff;
+    --line2:rgba(255,255,255,.07); --line:rgba(0,212,255,.18);
     --mono:"SF Mono","Cascadia Code","Consolas",ui-monospace,monospace;
     --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
   }
   *{box-sizing:border-box} body{margin:0}
   body{font-family:var(--sans); color:var(--text); background:
-     radial-gradient(1200px 600px at 70% -8%,rgba(0,212,255,.12),transparent 60%),
-     linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px) 0 0/100% 42px,
-     linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px) 0 0/42px 100%, var(--bg);
-     min-height:100vh; line-height:1.8;}
-  .wrap{max-width:820px; margin:0 auto; padding:70px 22px 60px}
-  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.28em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px}
+     radial-gradient(1200px 600px at 72% -8%,rgba(0,212,255,.12),transparent 60%),
+     radial-gradient(900px 500px at 10% 4%,rgba(155,109,255,.08),transparent 60%),
+     linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px) 0 0/100% 44px,
+     linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px) 0 0/44px 100%, var(--bg);
+     min-height:100vh; line-height:1.75;}
+  .wrap{max-width:900px; margin:0 auto; padding:64px 22px 64px}
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:var(--cyan); margin-bottom:16px}
   h1{font-size:40px; font-weight:800; color:#fff; margin:0; letter-spacing:-.01em; text-shadow:0 0 26px rgba(0,212,255,.28)}
-  .sub{color:#9fb2c6; font-size:16px; margin:16px 0 0; font-family:var(--mono)}
-  .grid{display:grid; gap:16px; margin:40px 0 0}
-  a.card{display:block; text-decoration:none; background:rgba(255,255,255,.03); border:1px solid var(--line2); border-radius:16px; padding:24px 26px; transition:.18s; color:var(--text)}
-  a.card:hover{border-color:var(--cyan); transform:translateY(-2px); box-shadow:0 0 30px rgba(0,212,255,.10)}
-  .card .n{font-family:var(--mono); font-size:13px; color:var(--cyan)}
-  .card h2{font-size:23px; color:#fff; margin:6px 0 8px; font-weight:800}
-  .card p{margin:0; font-size:15px; color:#a9bccf}
-  .card.c2{border-left:3px solid var(--purple)} .card.c1{border-left:3px solid var(--cyan)} .card.c3{border-left:3px solid var(--green)}
-  .go{font-family:var(--mono); font-size:13px; color:var(--gold); margin-top:12px; display:inline-block}
-  .foot{color:var(--dim); font-size:13px; font-family:var(--mono); text-align:center; margin-top:48px}
+  .sub{color:#9fb2c6; font-size:16px; margin:16px 0 0; max-width:60ch}
+  .by{color:var(--dim); font-family:var(--mono); font-size:13px; margin-top:10px}
+
+  .track{margin-top:44px}
+  .thead{display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--line2); padding-bottom:10px; margin-bottom:18px}
+  .thead .tn{font-family:var(--mono); font-size:13px; color:var(--cyan)}
+  .thead h2{font-size:20px; font-weight:800; color:#fff; margin:0}
+  .thead .td{color:var(--dim); font-size:13.5px; margin-left:auto; font-family:var(--mono)}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px}
+  a.card{display:flex; flex-direction:column; text-decoration:none; background:rgba(255,255,255,.03); border:1px solid var(--line2); border-radius:15px; padding:20px 22px; transition:.18s; color:var(--text); border-left:3px solid var(--accent,var(--cyan))}
+  a.card:hover{border-color:var(--accent,var(--cyan)); transform:translateY(-2px); box-shadow:0 0 30px rgba(0,212,255,.1)}
+  .card .n{font-family:var(--mono); font-size:12px; color:var(--accent,var(--cyan))}
+  .card h3{font-size:18px; color:#fff; margin:6px 0 6px; font-weight:800; line-height:1.35}
+  .card p{margin:0; font-size:13.5px; color:#a9bccf; flex:1}
+  .card .go{font-family:var(--mono); font-size:12.5px; color:var(--gold); margin-top:12px}
+  .card .flag{font-family:var(--mono); font-size:11px; color:var(--dim); margin-top:6px}
+  .c-cyan{--accent:var(--cyan)} .c-purple{--accent:var(--purple)} .c-green{--accent:var(--green)} .c-amber{--accent:var(--amber)}
+
+  .foot{color:var(--dim); font-size:13px; font-family:var(--mono); text-align:center; margin-top:52px; border-top:1px solid var(--line2); padding-top:24px}
+  @media(max-width:520px){ h1{font-size:30px} .wrap{padding:44px 18px} }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">互動教材 · 零數學 · 概念導向</div>
-    <h1>AI 是怎麼運作的？</h1>
-    <div class="sub">三堂互動課：從應用與表徵，到注意力與 Transformer，再到 ChatGPT 的生成與極限。</div>
-    <div class="grid">
-      <a class="card c1" href="lesson1.html">
-        <div class="n">第一課</div><h2>AI 能做什麼、如何理解世界</h2>
-        <p>四大應用領域 · 機器如何從資料學習 · 向量表徵 · 意義空間</p>
-        <span class="go">開始 →</span>
-      </a>
-      <a class="card c2" href="lesson2.html">
-        <div class="n">第二課</div><h2>注意力機制與 Transformer</h2>
-        <p>循序閱讀的瓶頸 · 注意力視覺化 · Q／K／V · 讀懂《Attention Is All You Need》</p>
-        <span class="go">開始 →</span>
-      </a>
-      <a class="card c3" href="lesson3.html">
-        <div class="n">第三課</div><h2>ChatGPT 如何生成答案</h2>
-        <p>文字接龍 · 機率與溫度 · 兩階段訓練 · 上下文與幻覺</p>
-        <span class="go">開始 →</span>
-      </a>
+    <div class="eyebrow">2026 Playchip 玩創晶片｜三民國中 AI 半導體研習營</div>
+    <h1>AI × 半導體 互動教材</h1>
+    <div class="sub">從「AI 怎麼運作」到「晶片怎麼設計」，再到「親手訓練一個 AI」——概念、原理、動手，一站到底。零到少量數學，概念導向。</div>
+    <div class="by">主講：陳泓光</div>
+
+    <div class="track">
+      <div class="thead"><span class="tn">A</span><h2>AI 怎麼運作</h2><span class="td">概念三課</span></div>
+      <div class="grid">
+        <a class="card c-cyan" href="lesson1.html"><div class="n">第一課</div><h3>AI 能做什麼、如何理解世界</h3><p>四大應用 · 機器如何從資料學習 · 向量表徵 · 意義空間</p><span class="go">開始 →</span></a>
+        <a class="card c-purple" href="lesson2.html"><div class="n">第二課</div><h3>注意力機制與 Transformer</h3><p>循序閱讀的瓶頸 · 注意力視覺化 · Q／K／V · 讀懂那篇論文</p><span class="go">開始 →</span></a>
+        <a class="card c-green" href="lesson3.html"><div class="n">第三課</div><h3>ChatGPT 如何生成答案</h3><p>文字接龍 · 機率與溫度 · 兩階段訓練 · 上下文與幻覺</p><span class="go">開始 →</span></a>
+      </div>
     </div>
+
+    <div class="track">
+      <div class="thead"><span class="tn">B</span><h2>AI 與晶片</h2><span class="td">為什麼需要專用晶片</span></div>
+      <div class="grid">
+        <a class="card c-amber" href="aichip.html"><div class="n">橋接單元</div><h3>為什麼 AI 要用「專門的」晶片</h3><p>神經元乘加 · CPU vs AI 加速器 · 為什麼要省電 · 記憶體牆與 3D 封裝</p><span class="go">開始 →</span></a>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="thead"><span class="tn">C</span><h2>晶片怎麼設計</h2><span class="td">EDA · 五關</span></div>
+      <div class="grid">
+        <a class="card c-amber" href="eda.html"><div class="n">半導體</div><h3>會蓋房子，就會設計晶片</h3><p>五關配對 · 從邏輯閘疊到積分器 · 擺放與繞線 · DRC 抓錯</p><span class="go">開始 →</span></a>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="thead"><span class="tn">D</span><h2>動手做 · 遊戲</h2><span class="td">訓練你自己的 AI</span></div>
+      <div class="grid">
+        <a class="card c-green" href="trainai.html"><div class="n">闖關遊戲</div><h3>訓練你自己的 AI：動作辨識器</h3><p>收集資料 → 標註 → 訓練 → 測試 → 打敗偏誤魔王，成為動作大師</p><span class="go">開始 →</span></a>
+        <a class="card c-cyan" href="battle.html"><div class="n">3D 原型</div><h3>AI 動作對戰（3D 分割畫面）</h3><p>雙人分割畫面對戰的外殼原型，之後接手勢 AI 與 Rabboni 感測器</p><span class="go">開始 →</span><span class="flag">※ 請用電腦版 Chrome／Edge 開</span></a>
+      </div>
+    </div>
+
     <div class="foot">2026 Playchip 玩創晶片 · 三民國中 AI 半導體研習營　|　主講：陳泓光</div>
   </div>
 </body>
